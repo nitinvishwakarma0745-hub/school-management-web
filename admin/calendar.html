@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calendar</title>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+<script src="../firebase-config.js"></script>
+
+<style>
+body{
+    margin:0;
+    font-family:Poppins, sans-serif;
+    background:#f4f4f4;
+}
+
+/* TOP BAR */
+.top-bar{
+    background:#e59b15;
+    color:#fff;
+    padding:28px 16px;
+    border-bottom-left-radius:25px;
+    border-bottom-right-radius:25px;
+    position:fixed;
+    top:0;
+    width:100%;
+    z-index:1000;
+}
+.top-bar h2{
+    margin:0;
+    font-size:22px;
+  
+}
+
+/* CONTENT */
+.container{
+    margin-top:110px;
+    padding:16px;
+    text-align:center;
+}
+
+/* CAL TAB SWITCH */
+/* 🔒 FIXED CALENDAR / EVENTS TAB BAR */
+.cal-switch{
+    position: fixed;          /* 🔥 FIXED */
+    top: 80px;                /* 🔥 top-bar ke niche */
+    left: 0;
+    width: 100%;
+
+    background: #f4f4f4;
+    z-index: 999;
+font-size: 20px;
+    display: flex;
+    justify-content: center;
+    gap: 140px;
+    padding: 20px 0;
+}
+#calendarTab,
+#eventTab{
+    margin-top: 40px;   /* 🔥 fixed tab bar ki height */
+}
+
+.cal-tab-btn{
+    cursor: pointer;
+    padding-bottom: 6px;
+    font-size: 20px;
+    font-weight: 700;   /* 🔥 BOLD */
+}
+.active-cal-tab{
+    color:#e59b15;
+    border-bottom:3px solid #e59b15;
+}
+
+
+/* CALENDAR */
+#monthTitle{
+    font-size:20px;
+    margin:10px 0;
+}
+table{
+    width:100%;
+    text-align:center;
+    margin-top: 15px;
+}
+th{
+    font-size:16px;
+    color:#777;
+}
+td{
+    padding:8px 0;
+}
+td div{
+    width:34px;
+    height:34px;
+    line-height:34px;
+    border-radius:50%;
+    margin:auto;
+}
+
+/* EVENTS */
+.event-card{
+    border-radius:14px;
+    padding:16px;
+    margin-bottom:12px;
+    text-align:left;
+    position:relative;
+    box-shadow:0 3px 12px rgba(0,0,0,0.12);
+}
+.event-card:nth-child(4n+1){background:#ffe0e0;}
+.event-card:nth-child(4n+2){background:#d9f7f5;}
+.event-card:nth-child(4n+3){background:#fff0d6;}
+.event-card:nth-child(4n+4){background:#e0e8ff;}
+
+.event-card h4{
+    margin:0 0 10px;
+    font-size:18px;
+    font-weight:700;
+}
+.event-card p{
+    margin:0;
+    font-size:15px;
+    line-height:1.5;
+}
+
+/* ACTIONS (ADMIN) */
+.event-actions{
+    position:absolute;
+    right:12px;
+    top:50%;
+    transform:translateY(-50%);
+}
+.event-actions button{
+    border:none;
+    padding:8px 12px;
+    font-size:16px;
+    border-radius:8px;
+    margin-left:6px;
+    cursor:pointer;
+}
+.edit{background:#ffe1a8;}
+.delete{background:#ffb3b3;}
+
+/* ADD BUTTON */
+.add-btn{
+    background:#e59b15;
+    color:#fff;
+    width:100%;
+    padding:12px;
+    border:none;
+    border-radius:12px;
+    font-size:16px;
+    margin-top:15px;
+    cursor:pointer;
+}
+
+/* MOBILE */
+@media(max-width:600px){
+    .container{margin-top:95px;}
+    .cal-switch{gap:80px;font-size:18px;}
+    td div{width:28px;height:28px;line-height:28px;font-size:14px;}
+    .event-card h4{font-size:16px;}
+    .event-card p{font-size:14px;padding-right:80px;}
+   @media(max-width:600px){
+    .cal-switch{
+        top: 80px;
+        gap: 80px;
+        padding: 14px 0;
+    }
+   .event-actions button{
+        padding:6px 8px;
+        font-size:14px;
+        margin-left:4px;
+        border-radius:6px;
+    }
+    #calendarTab,
+    #eventTab{
+        margin-top: 40px;
+    }
+}
+ 
+}
+</style>
+</head>
+
+<body>
+
+<div class="top-bar">
+    <h2> Calendar</h2>
+</div>
+
+<div class="container">
+
+    <!-- SWITCH -->
+    <div class="cal-switch">
+        <span id="calTabBtn" class="cal-tab-btn active-cal-tab"
+              onclick="switchCalTab('calendarTab')">Calendar</span>
+        <span id="eventTabBtn" class="cal-tab-btn"
+              onclick="switchCalTab('eventTab')">Events</span>
+    </div>
+
+    <!-- CALENDAR TAB -->
+    <div id="calendarTab">
+        <div style="display:flex;justify-content:center;gap:20px;align-items:center;">
+            <button onclick="prevMonth()" style="border:none;background:none;font-size:20px;">❮</button>
+            <h3 id="monthTitle"></h3>
+            <button onclick="nextMonth()" style="border:none;background:none;font-size:20px;">❯</button>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Sun</th><th>Mon</th><th>Tue</th>
+                    <th>Wed</th><th>Thu</th><th>Fri</th><th>Sat</th>
+                </tr>
+            </thead>
+            <tbody id="calendarBody"></tbody>
+        </table>
+    </div>
+
+    <!-- EVENTS TAB -->
+    <div id="eventTab" style="display:none;">
+        <div id="eventList"></div>
+        <button class="add-btn" onclick="addEvent()">➕ Add New Event</button>
+    </div>
+
+</div>
+
+<script>
+/* ---------- CALENDAR ---------- */
+let date = new Date();
+let currentMonth = date.getMonth();
+let currentYear = date.getFullYear();
+const months = ["January","February","March","April","May","June","July",
+                "August","September","October","November","December"];
+
+function loadCalendar(){
+    document.getElementById("monthTitle").innerText =
+        months[currentMonth] + ", " + currentYear;
+
+    let firstDay = new Date(currentYear,currentMonth,1).getDay();
+    let days = new Date(currentYear,currentMonth+1,0).getDate();
+
+    let html="", day=1;
+    for(let i=0;i<6;i++){
+        html+="<tr>";
+        for(let j=0;j<7;j++){
+            if(i===0 && j<firstDay) html+="<td></td>";
+            else if(day>days) break;
+            else{
+                let today = day===date.getDate() &&
+                            currentMonth===date.getMonth() &&
+                            currentYear===date.getFullYear();
+                html+=`<td><div style="${today?'background:#e59b15;color:#fff;font-weight:bold;':''}">${day}</div></td>`;
+                day++;
+            }
+        }
+        html+="</tr>";
+    }
+    document.getElementById("calendarBody").innerHTML=html;
+}
+loadCalendar();
+
+function prevMonth(){currentMonth--;if(currentMonth<0){currentMonth=11;currentYear--;}loadCalendar();}
+function nextMonth(){currentMonth++;if(currentMonth>11){currentMonth=0;currentYear++;}loadCalendar();}
+
+function switchCalTab(tab){
+    document.getElementById("calendarTab").style.display = tab==="calendarTab"?"block":"none";
+    document.getElementById("eventTab").style.display = tab==="eventTab"?"block":"none";
+    calTabBtn.classList.toggle("active-cal-tab",tab==="calendarTab");
+    eventTabBtn.classList.toggle("active-cal-tab",tab==="eventTab");
+}
+function addEvent(){
+    let title = prompt("Title");
+    if(!title) return;
+
+    let date = prompt("Date (12-02-2025 or 12-02-2025 to 14-02-2025)");
+    if(!date) return;
+
+    let desc = prompt("Description (optional)");
+
+    let seq = prompt("Sequence / Position (1,2,3...)");
+    seq = Number(seq || 999);
+
+    db.collection("CalendarEvents")
+      .doc("events")
+      .collection("items")
+      .add({
+          title: title,
+          date: date,
+          description: desc || "",
+          sequence: seq,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+}
+
+/* ---------- EVENTS (FIREBASE) ---------- */
+function loadEvents(){
+  db.collection("CalendarEvents")
+    .doc("events")
+    .collection("items")
+    .orderBy("sequence","asc")
+    .onSnapshot(snapshot=>{
+      let html = "";
+
+      snapshot.forEach(doc=>{
+        const d = doc.data();
+
+        html += `
+          <div class="event-card">
+            <h4>${d.title}</h4>
+            <p>📅 ${d.date}</p>
+            <p>${d.description || ""}</p>
+            <div class="event-actions">
+              <button class="edit"
+                onclick="editEvent(
+                  '${doc.id}',
+                  '${d.title}',
+                  '${d.date}',
+                  '${d.description || ""}',
+                  '${d.sequence || 999}'
+                )">✏️</button>
+
+              <button class="delete"
+                onclick="deleteEvent('${doc.id}')">🗑</button>
+            </div>
+          </div>
+        `;
+      });
+
+      document.getElementById("eventList").innerHTML =
+        html || "<p>No events added</p>";
+    });
+}
+
+
+function editEvent(id,t,d,ds,seq){
+    let nt = prompt("Edit Title", t);
+    if(!nt) return;
+
+    let nd = prompt("Edit Date", d);
+    if(!nd) return;
+
+    let nds = prompt("Edit Description", ds);
+    let nseq = prompt("Edit Sequence", seq);
+
+    db.collection("CalendarEvents")
+      .doc("events")
+      .collection("items")
+      .doc(id)
+      .update({
+        title: nt,
+        date: nd,
+        description: nds || "",
+        sequence: Number(nseq || 999)
+      });
+}
+function deleteEvent(id){
+    if(confirm("Delete this event?")){
+        db.collection("CalendarEvents")
+          .doc("events")
+          .collection("items")
+          .doc(id)
+          .delete();
+    }
+}
+
+/* 🔥 THIS WAS MISSING */
+loadEvents();
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Teacher Dashboard</title>
+<script>
+const isLoggedIn = localStorage.getItem("appLoggedIn");
+let role = localStorage.getItem("appRole");
+
+if (!role) {
+  localStorage.clear();
+  window.location.replace("../index.html");
+}
+
+role = role.toLowerCase();
+
+if (isLoggedIn !== "true" || role !== "teacher") {
+  window.location.replace("../index.html");
+}
+</script>
+
+<style>
+body{
+    margin:0;
+    font-family:Poppins, sans-serif;
+    background:#f4f4f4;
+    overflow-x:hidden;
+    font-size:16px;
+}
+
+.tab{
+    display:none;
+    overflow-y:auto;
+    padding-bottom:140px;
+    padding-top:100px;
+}
+
+/* TOP BAR */
+.top-bar{
+    background:#e59b15;
+    color:#fff;
+    padding:20px;
+    border-bottom-left-radius:25px;
+    border-bottom-right-radius:25px;
+    position:fixed;
+    top:0;
+    width:100%;
+    z-index:1000;
+}
+#home .grid {
+    margin-top: 50px;
+}
+
+.top-bar h2{
+    font-size:26px;
+    font-weight:600;
+    margin-bottom:5px;
+}
+.top-bar p{
+    font-size:18px;
+    margin:6px 0;
+}
+
+/* GRID */
+.grid{
+    padding:15px;
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:12px;
+}
+.card{
+    background:#f8f8f8;
+    text-align:center;
+    padding:23px 10px;
+    border-radius:15px;
+    width:89%;
+    margin:auto;
+    box-shadow:0 4px 14px rgba(0,0,0,0.12);
+}
+.card-icon{font-size:30px;}
+.card-title{font-size:18px;}
+
+/* PROFILE / INFO CARD */
+.profile-card{
+    background:#fff;
+    padding:15px;
+    border-radius:12px;
+    margin-bottom:15px;
+    font-size:20px;
+    box-shadow:0 3px 12px rgba(0,0,0,0.08);
+}
+
+/* NAVBAR */
+.navbar{
+    position:fixed;
+    bottom:0;
+    width:100%;
+    background:#ffdba4;
+    display:flex;
+    justify-content:space-around;
+    padding:8px 0;
+    border-top:2px solid #d6b182;
+    z-index:999;
+}
+.nav-item{
+    width:25%;
+    text-align:center;
+    font-size:22px;
+    cursor:pointer;
+}
+.nav-item span{
+    font-size:24px;
+    display:block;
+}
+.nav-active{
+    color:#e59b15;
+    font-weight:bold;
+}
+
+/* MOBILE */
+@media(max-width:600px){
+    body{font-size:14px;}
+    .tab{padding-top:70px;}
+    .top-bar{padding:12px;}
+    .top-bar h2{font-size:20px;}
+    .top-bar p{font-size:14px;}
+    .card{width:95%;padding:20px 7px;}
+    .card-icon{font-size:24px;}
+    .card-title{font-size:14px;}
+    .nav-item{font-size:14px;}
+    .nav-item span{font-size:18px;}
+    .profile-card{font-size:15px;}
+}
+</style>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+<script src="../firebase-config.js"></script>
+</head>
+
+<body>
+
+<!-- HOME -->
+<div id="home" class="tab">
+    <div class="top-bar">
+        <h2 id="teacherName">Hi, Teacher</h2>
+       <p>Teacher Pannel</p>
+        <p id="teacherYear"></p>
+        
+        
+    </div>
+<div class="grid">
+
+   <div class="card" onclick="openInfoDesk()">
+    <div class="card-icon">ℹ️</div>
+    <div class="card-title">Info Desk</div>
+</div>
+
+    <div class="card" onclick="location.href='calendar.html'">
+    <div class="card-icon">📅</div>
+    <div class="card-title">Calendar</div>
+</div>
+
+
+    <div class="card">
+        <div class="card-icon">🏫</div>
+        <div class="card-title">My Class</div>
+    </div>
+
+ <div class="card" onclick="location.href='usefullinks.html'">
+    <div class="card-icon">🔗</div>
+    <div class="card-title">Useful Links</div>
+</div>
+
+
+    <div class="card">
+        <div class="card-icon">📄</div>
+        <div class="card-title">Notice</div>
+    </div>
+
+    <div class="card">
+        <div class="card-icon">📣</div>
+        <div class="card-title">Notice</div>
+    </div>
+
+    <div class="card">
+        <div class="card-icon">💰</div>
+        <div class="card-title">Fees</div>
+    </div>
+
+    <div class="card">
+        <div class="card-icon">📚</div>
+        <div class="card-title">Homework</div>
+    </div>
+
+    <div class="card">
+        <div class="card-icon">⏰</div>
+        <div class="card-title">Timetable</div>
+    </div>
+
+    <div class="card">
+        <div class="card-icon">📊</div>
+        <div class="card-title">Attendance</div>
+    </div>
+
+    <div class="card">
+        <div class="card-icon">📝</div>
+        <div class="card-title">Assignment</div>
+    </div>
+
+    <div class="card">
+        <div class="card-icon">🎯</div>
+        <div class="card-title">Result</div>
+    </div>
+
+    <div class="card">
+        <div class="card-icon">❓</div>
+        <div class="card-title">Query</div>
+    </div>
+
+    <div class="card">
+        <div class="card-icon">🏖️</div>
+        <div class="card-title">Student Leave</div>
+    </div>
+
+    <div class="card">
+        <div class="card-icon">📋</div>
+        <div class="card-title">Poll</div>
+    </div>
+
+</div>
+
+</div>
+
+<!-- NOTIFICATION -->
+<div id="notification" class="tab">
+    <div class="top-bar"><h2>Notifications</h2></div>
+    <div style="padding:15px;">
+        <div class="profile-card">📢 New Notice Added</div>
+        <div class="profile-card">📝 Assignment Review Pending</div>
+    </div>
+</div>
+
+<!-- PROFILE -->
+<div id="profile" class="tab">
+    <div class="top-bar"><h2>Profile</h2></div>
+
+    <div style="padding:15px;">
+        <div class="profile-card">
+            <strong>Organization Info</strong><br><br>
+            🏫 Bhagyodaya School Sagar<br><br>
+            📘 Class: <span id="orgClass"></span><br><br>
+            📅 Year: <span id="orgYear"></span>
+        </div>
+
+        <div class="profile-card">
+            <strong>Personal Info</strong><br><br>
+            👤 Name: <span id="pName"></span><br><br>
+            ⚧ Gender: <span id="pGender"></span><br><br>
+            🎂 DOB: <span id="pDob"></span>
+        </div>
+
+        <div class="profile-card">
+            <strong>Contact Info</strong><br><br>
+            📞 Phone: <span id="pPhone"></span><br><br>
+            ✉ Email: <span id="pEmail"></span>
+        </div>
+    </div>
+</div>
+
+<!-- SETTINGS -->
+<div id="settings" class="tab">
+    <div class="top-bar"><h2>Settings</h2></div>
+    <div style="padding:20px;">
+        <button onclick="logout()"
+        style="background:red;color:white;width:100%;padding:12px;border:none;border-radius:12px;">
+        Logout</button>
+    </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="navbar">
+    <div class="nav-item nav-active" onclick="switchTab('home',this)"><span>🏠</span>Home</div>
+    <div class="nav-item" onclick="switchTab('notification',this)"><span>🔔</span>Notification</div>
+    <div class="nav-item" onclick="switchTab('profile',this)"><span>👤</span>Profile</div>
+    <div class="nav-item" onclick="switchTab('settings',this)"><span>⚙️</span>Settings</div>
+</div>
+
+<script>
+let userData = JSON.parse(localStorage.getItem("studentLoginData") || "{}");
+
+document.getElementById("teacherName").innerText = "Hi, " + (userData.name || "Teacher");
+document.getElementById("teacherYear").innerText = "Year - " + (userData.year || "");
+
+document.getElementById("orgClass").innerText = userData.class || "-";
+document.getElementById("orgYear").innerText = userData.year || "-";
+document.getElementById("pName").innerText = userData.name || "-";
+document.getElementById("pGender").innerText = userData.gender || "-";
+document.getElementById("pDob").innerText = userData.dob || "-";
+document.getElementById("pPhone").innerText = userData.phone || "-";
+document.getElementById("pEmail").innerText = userData.email || "-";
+function openInfoDesk(){
+    window.location.href = "info-desk.html";
+}
+function switchTab(tab, el){
+    document.querySelectorAll('.tab').forEach(t=>t.style.display='none');
+    document.getElementById(tab).style.display='block';
+    document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('nav-active'));
+    if(el) el.classList.add('nav-active');
+}
+switchTab('home', document.querySelector('.nav-item'));
+function logout() {
+
+    // 🔥 ANDROID SESSION CLEAR
+    if (window.Android) {
+        Android.logout();
+    }
+
+    // Firebase logout
+    firebase.auth().signOut().catch(()=>{});
+
+    // Web session clear
+    localStorage.clear();
+    sessionStorage.clear();
+
+    // HARD redirect (history clean)
+    window.location.href = "../index.html";
+}
+
+
+</script>
+
+</body>
+</html>

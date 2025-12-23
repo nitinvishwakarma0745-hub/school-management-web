@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Student Dashboard</title>
+<script>
+const isLoggedIn = localStorage.getItem("appLoggedIn");
+let role = localStorage.getItem("appRole");
+
+if (!role) {
+  localStorage.clear();
+  window.location.replace("../index.html");
+}
+
+role = role.toLowerCase();
+
+if (isLoggedIn !== "true" || role !== "student") {
+  window.location.replace("../index.html");
+}
+</script>
+
+
+
+<style>
+body {
+    margin: 0;
+    font-family: Poppins, sans-serif;
+    background: #f4f4f4;
+    overflow-x: hidden;
+    font-size: 16px;
+}
+
+/* Tab content adjusted so header text stays visible */
+.tab {
+    display: none;
+    overflow-y: auto;
+    padding-bottom: 140px;
+    padding-top: 100px;
+}
+ 
+
+/* TOP BAR FIXED */
+.top-bar {
+    background: #e59b15;
+    color: white;
+    padding: 20px;
+    border-bottom-left-radius: 25px;
+    border-bottom-right-radius: 25px;
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 1000;
+}
+
+.top-bar h2 {
+    font-size: 26px;
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+.top-bar p {
+    font-size: 18px;
+    margin: 6px  0;
+}
+
+/* ⭐ BACK BUTTON UPDATED */
+.back-btn {
+    background: none;
+    border: none;
+    font-size: 28px;  /* Bigger arrow */
+    font-weight: 400;
+    color: #ffffff;   /* Bright */
+    margin-right: 15px;
+    cursor: pointer;
+}
+
+#home .grid {
+    margin-top: 50px;
+}
+
+/* Feature Grid */
+.grid {
+    padding: 15px;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.card {
+    background: #f8f8f8;
+    text-align: center;
+    padding: 23px 10px;
+    border-radius: 15px;
+    width: 89%;
+    margin: auto;
+    box-shadow: 0px 4px 14px rgba(0,0,0,0.12);
+    cursor: pointer;
+}
+
+.card-icon { font-size: 30px; }
+.card-title { font-size: 18px; }
+
+/* Profile Cards */
+.profile-card {
+    background: #fff;
+    padding: 15px;
+    border-radius: 12px;
+    margin-bottom: 15px;
+    font-size: 20px;
+    box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+}
+
+/* Info Cards */
+.info-card {
+    padding: 15px;
+    font-size: 20px;
+    border-radius: 12px;
+    margin-bottom: 15px;
+    box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+}
+
+#info .info-card:first-child {
+    margin-top: 28px;
+}
+
+/* Bottom Nav */
+.navbar {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    background: #ffdba4;
+    display: flex;
+    justify-content: space-around;
+    padding: 8px 0;
+    border-top: 2px solid #d6b182;
+    z-index: 999;
+}
+.nav-item {
+    text-align: center;
+    cursor: pointer;
+    width: 25%;
+    font-size: 22px;
+}
+.nav-item span { font-size: 24px; display:block; }
+.nav-active { color: #e59b15; font-weight: bold; }
+
+/** Calendar Tab Indicator **/
+.cal-tab-btn {
+    cursor: pointer;
+    padding-bottom: 6px;
+    transition: 0.3s;
+    font-size: 22px;
+    font-weight: bold;
+}
+
+.active-cal-tab {
+    color: #e59b15;
+    border-bottom: 3px solid #e59b15;
+}
+
+#calendar th { font-size: 20px; }
+#monthTitle { font-size: 21px; }
+/* Web gap – Calendar vs Events */
+.cal-switch {
+    display: flex;
+    justify-content: center;
+    gap: 150px; /* Web/Laptop gap */
+    margin-bottom: 20px;
+}
+
+/* Mobile me gap chhota */
+@media (max-width: 600px) {
+    .cal-switch {
+        gap: 80px !important; /* Mobile gap */
+    }
+}
+
+/* 📱 Mobile Responsive Fix */
+@media (max-width: 600px) {
+
+    body {
+        font-size: 14px;
+    }
+.tab {
+        padding-top: 68px !important;
+    }
+   
+   
+    .top-bar {
+        padding: 12px;
+    }
+
+    .top-bar h2 {
+        font-size: 20px;
+    }
+#home .grid {
+    margin-top: 27px;
+}
+    .top-bar p {
+        font-size: 14px;
+        margin: 0;
+    }
+
+    .grid {
+        gap: 9px;
+    }
+
+    .card {
+        padding: 20px 7px;
+        width: 95%;
+    }
+
+    .card-icon {
+        font-size: 24px;
+    }
+
+    .card-title {
+        font-size: 14px;
+    }
+#info .info-card:first-child {
+    margin-top: 32px;
+}
+    #calendar table {
+        width: 100%;
+        table-layout: fixed;
+    }
+    #calendar td div {
+        width: 28px;
+        height: 28px;
+        line-height: 28px;
+        font-size: 14px;
+    }
+ #calendar th {
+        padding: 8px 4px !important; /* Height + Horizontal gap increased */
+        font-size: 15px !important;
+    }
+
+    #calendar table {
+        border-spacing: 6px 0 !important; /* Columns gap */
+    }
+    
+    #calendar table {
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border-collapse: collapse !important;
+        table-layout: fixed !important; /* Full width stretching */
+    
+    }
+
+    #calendar thead th {
+        padding: 10px 0 !important;
+    }
+
+    #calendar td {
+        padding: 6px 0 !important;
+    }
+    
+    /* Calendar month title smaller */
+    #monthTitle {
+        font-size: 15.5px !important;
+    }
+
+    /* Week names smaller */
+    #calendar th {
+        font-size: 14px !important;
+    }
+    
+    /* Events text smaller */
+    #eventTab .profile-card {
+        font-size: 14px !important;
+        padding: 10px !important;
+    }
+
+    /* Calendar tab menu text smaller */
+    .cal-tab-btn {
+        font-size: 16px !important;
+    }
+    .nav-item {
+        font-size: 14px;
+    }
+
+    .nav-item span {
+        font-size: 18px;
+    }
+
+    .profile-card, .info-card, .class-card {
+        font-size: 15px !important;
+        padding: 12px !important;
+    }
+}
+</style> 
+<!-- Firebase Scripts -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+<!-- Load your config EXACTLY ONE TIME -->
+<script src="../firebase-config.js"></script>
+
+
+              </head>
+               <body>
+
+
+<!-- HOME -->
+<div id="home" class="tab">
+    <div class="top-bar">
+        <h2 id="studentName"></h2>
+        <p id="studentClass"></p>
+        <p id="studentYear"></p>
+    </div>
+
+    <div class="grid">
+       <div class="card" onclick="openInfoDesk()">
+    <div class="card-icon">ℹ️</div>
+    <div class="card-title">Info Desk</div>
+</div>
+
+       <div class="card" onclick="location.href='calendar.html'">
+    <div class="card-icon">📅</div>
+    <div class="card-title">Calendar</div>
+</div>
+
+        <div class="card" onclick="openMyClass()">
+    <div class="card-icon">🏫</div>
+    <div class="card-title">My Class</div>
+</div>
+
+<div class="card" onclick="location.href='usefullinks.html'">
+    <div class="card-icon">🔗</div>
+    <div class="card-title">Useful Links</div>
+</div>
+
+       
+
+        <div class="card"><div class="card-icon">📄</div><div class="card-title">Notice</div></div>
+        <div class="card"><div class="card-icon">💰</div><div class="card-title">Fees</div></div>
+        <div class="card"><div class="card-icon">📚</div><div class="card-title">Homework</div></div>
+        <div class="card"><div class="card-icon">🕒</div><div class="card-title">Timetable</div></div>
+        <div class="card"><div class="card-icon">📊</div><div class="card-title">Attendance</div></div>
+        <div class="card"><div class="card-icon">📝</div><div class="card-title">Assignment</div></div>
+        <div class="card"><div class="card-icon">🎯</div><div class="card-title">Result</div></div>
+        <div class="card"><div class="card-icon">❓</div><div class="card-title">Query</div></div>
+        <div class="card"><div class="card-icon">🏫</div><div class="card-title">Student Leave</div></div>
+        <div class="card"><div class="card-icon">📋</div><div class="card-title">Poll</div></div>
+    </div>
+</div>
+
+<!-- ⭐ MY CLASS TAB ⭐ -->
+<div id="myClass" class="tab">
+    <div class="top-bar">
+        <button class="back-btn" onclick="switchTab('home', document.querySelector('.nav-item'))">←</button>
+        <h2>My Class</h2>
+    </div>
+
+    <div style="padding:15px; margin-top: 30px" id="classList"></div>
+</div>
+
+<style>
+.class-card {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px;
+    border-radius: 12px;
+    margin-bottom: 15px;
+    font-size: 20px;
+    box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+}
+</style>
+
+<!-- ⭐ USEFUL LINKS TAB ⭐ -->
+<div id="usefulLinks" class="tab">
+    <div class="top-bar">
+        <button class="back-btn" onclick="switchTab('home', document.querySelector('.nav-item'))">←</button>
+        <h2>Useful Links</h2>
+    </div>
+
+    <div style="padding:15px; margin-top: 35px">
+
+        <div class="profile-card" style="background:#ffd4c9;">
+            <strong>Portal Link</strong><br>
+            <a href="https://srit.onlinevidyalaya.net/" target="_blank">
+                https://srit.onlinevidyalaya.net/
+            </a>
+        </div>
+
+        <div class="profile-card" style="background:#d8f0ff;">
+            <strong>YouTube Channel</strong><br>
+            <a href="https://youtube.com" target="_blank">
+                youtube.com
+            </a>
+        </div>
+
+        <div class="profile-card" style="background:#ffeec7;">
+            <strong>NCERT e-Pathshala</strong><br>
+            <a href="https://ncert.nic.in" target="_blank">
+                ncert.nic.in
+            </a>
+        </div>
+
+        <div class="profile-card" style="background:#dfffd7;">
+            <strong>Scholarship Portal</strong><br>
+            <a href="https://scholarshipportal.mp.gov.in" target="_blank">
+                scholarshipportal.mp.gov.in
+            </a>
+        </div>
+
+    </div>
+</div>
+
+<!-- NOTIFICATION -->
+<div id="notification" class="tab">
+    <div class="top-bar"><h2>🔔 Notifications</h2></div>
+    <div style="padding:15px;">
+        <div class="profile-card">📢 Holiday Tomorrow!</div>
+        <div class="profile-card">📝 Homework Updated!</div>
+        <div class="profile-card">📊 Exam Schedule Released!</div>
+    </div>
+</div>
+<!-- CALENDAR TAB -->
+<div id="calendar" class="tab">
+    <div class="top-bar">
+        <button class="back-btn" onclick="switchTab('home', document.querySelector('.nav-item'))">←</button>
+        <h2>Calendar</h2>
+    </div>
+
+    <div style="padding:40px;text-align:center;">
+     <div class="cal-switch">
+
+            <span id="calTabBtn" class="cal-tab-btn active-cal-tab" onclick="switchCalTab('calTab')">Calendar</span>
+            <span id="eventTabBtn" class="cal-tab-btn" onclick="switchCalTab('eventTab')">Events</span>
+        </div>
+
+        <div id="calTab">
+            <div style="display:flex;align-items:center;justify-content:center;gap:20px;margin-bottom:15px;width:100%;">
+                <button onclick="prevMonth()" style="background:none;border:none;font-size:20px;cursor:pointer;">❮</button>
+                <h3 id="monthTitle" style="margin:0;"></h3>
+                <button onclick="nextMonth()" style="background:none;border:none;font-size:20px;cursor:pointer;">❯</button>
+            </div>
+
+            <table style="width:100%;text-align:center;">
+                <thead><tr style="color:#777;">
+                    <th>Sun</th><th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Sat</th>
+                </tr></thead>
+                <tbody id="calendarBody"></tbody>
+            </table>
+        </div>
+
+        <div id="eventTab" style="display:none;margin-top:15px;">
+            <div class="profile-card">📚 18 Nov – Homework Due</div>
+            <div class="profile-card">📝 20 Nov – Unit Test</div>
+        </div>
+    </div>
+</div>
+
+<!-- PROFILE TAB -->
+<div id="profile" class="tab">
+    <div class="top-bar"><h2>Profile</h2></div>
+
+    <div style="padding:15px;">
+        <div class="profile-card">
+            <strong>Organization Info</strong><br><br>
+            🏫 Bhagyodaya School Sagar<br><br>
+            🎓 Class: <span id="orgClass"></span><br><br>
+            🆔 Roll No: <span id="orgRoll"></span><br><br>
+            📅 Year: <span id="orgYear"></span>
+        </div>
+
+        <div class="profile-card">
+            <strong>Personal Info</strong><br><br>
+            👤 Gender: <span id="pGender"></span><br><br>
+            🎂 DOB: <span id="pDob"></span><br><br>
+            📛 Name: <span id="pNameCard"></span>
+        </div>
+
+        <div class="profile-card">
+            <strong>Contact Info</strong><br><br>
+            📞 Phone: <span id="pPhone"></span><br><br>
+            ✉ Email: <span id="pEmail"></span>
+        </div>
+    </div>
+</div>
+
+<!-- SETTINGS -->
+<div id="settings" class="tab">
+    <div class="top-bar"><h2>Settings</h2></div>
+    <div style="padding:20px;">
+        <button onclick="logout()"
+        style="background:red;color:white;width:100%;padding:12px;border-radius:12px;border:none;">
+        Logout</button>
+    </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="navbar">
+    <div class="nav-item nav-active" onclick="switchTab('home', this)"><span>🏠</span>Home</div>
+    <div class="nav-item" onclick="switchTab('notification', this)"><span>🔔</span>Notification</div>
+    <div class="nav-item" onclick="switchTab('profile', this)"><span>👤</span>Profile</div>
+    <div class="nav-item" onclick="switchTab('settings', this)"><span>⚙️</span>Settings</div>
+</div>
+
+<script>
+let data = JSON.parse(localStorage.getItem("studentLoginData") || "{}");
+
+/* ⭐ My Class Load Function */
+function openMyClass() {
+    loadMyClass();
+    switchTab('myClass');
+}
+async function loadMyClass() {
+
+    let className = data.class;
+
+    if (!className) {
+        document.getElementById("classList").innerHTML =
+            "<p style='color:red'>Class not found</p>";
+        return;
+    }
+
+    try {
+        document.getElementById("classList").innerHTML = "<p>Loading...</p>";
+
+        const classStudentsRef = db
+            .collection("students")
+            .doc(className)
+            .collection("classStudents");
+
+        const snap = await classStudentsRef.get();
+
+        let studentsArr = [];
+
+        snap.forEach(doc => {
+            let d = doc.data();
+
+            studentsArr.push({
+                name: d.name,
+                roll: Number(d.roll),
+                gender: d.gender,
+                phone: d.phone
+            });
+        });
+
+        studentsArr.sort((a, b) => a.roll - b.roll);
+
+        let html = "";
+
+        studentsArr.forEach(st => {
+            const bg = st.gender === "Male" ? "#dce7ff" : "#ffd7e1";
+            const av = st.gender === "Male" ? "👦" : "👧";
+
+            html += `
+                <div class="class-card" style="background:${bg};">
+                    <div style="font-size:35px;">${av}</div>
+                    <div>
+                        <strong>${st.name}</strong><br>
+                        Roll No: ${st.roll}
+                    </div>
+                </div>`;
+        });
+
+        document.getElementById("classList").innerHTML = html;
+
+    } catch (err) {
+        console.error(err);
+        document.getElementById("classList").innerHTML =
+            "<p style='color:red'>Error loading class data</p>";
+    }
+}
+
+
+
+document.getElementById("studentName").innerText = "Hi, " + (data.name || "Student");
+document.getElementById("studentClass").innerText = "Class - " + (data.class || "NA");
+document.getElementById("studentYear").innerText = data.year || "NA";
+
+document.getElementById("pNameCard").innerText = data.name || "NA";
+document.getElementById("orgClass").innerText = data.class || "NA";
+document.getElementById("orgRoll").innerText = data.roll || "NA";
+document.getElementById("orgYear").innerText = data.year || "NA";
+document.getElementById("pGender").innerText = data.gender || "NA";
+document.getElementById("pDob").innerText = data.dob || "NA";
+document.getElementById("pPhone").innerText = data.phone || "NA";
+document.getElementById("pEmail").innerText = data.email || "NA";
+
+let date = new Date();
+let currentMonth = date.getMonth();
+let currentYear = date.getFullYear();
+
+const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+
+function loadCalendar(){
+    document.getElementById("monthTitle").innerText = months[currentMonth] + ", " + currentYear;
+    let firstDay = new Date(currentYear,currentMonth,1).getDay();
+    let days = new Date(currentYear,currentMonth+1,0).getDate();
+
+    let table="", day=1;
+    for(let i=0;i<6;i++){
+        table+="<tr>";
+        for(let j=0;j<7;j++){
+            if(i===0 && j<firstDay){
+                table+="<td></td>";
+            } else if(day > days){
+                break;
+            } else {
+                let isToday = (day===date.getDate() && currentMonth===date.getMonth() && currentYear===date.getFullYear());
+                table+=`<td style="padding:8px;"><div style="width:32px;height:32px;line-height:32px;border-radius:50%;margin:auto;
+                    ${isToday?'background:#e59b15;color:white;font-weight:bold;':''}">${day}</div></td>`;
+                day++;
+            }
+        }
+        table+="</tr>";
+    }
+    document.getElementById("calendarBody").innerHTML = table;
+}
+loadCalendar();
+
+function prevMonth(){ currentMonth--; if(currentMonth<0){ currentMonth=11; currentYear--; } loadCalendar(); }
+function nextMonth(){ currentMonth++; if(currentMonth>11){ currentMonth=0; currentYear++; } loadCalendar(); }
+
+function switchCalTab(tab){
+    document.getElementById("calTab").style.display = tab==="calTab" ? "block" : "none";
+    document.getElementById("eventTab").style.display = tab==="eventTab" ? "block" : "none";
+
+    document.getElementById("calTabBtn").classList.remove("active-cal-tab");
+    document.getElementById("eventTabBtn").classList.remove("active-cal-tab");
+
+    if(tab==="calTab"){
+        document.getElementById("calTabBtn").classList.add("active-cal-tab");
+    } else {
+        document.getElementById("eventTabBtn").classList.add("active-cal-tab");
+    }
+}
+
+function switchTab(tab, element){
+    document.querySelectorAll(".tab").forEach(t => t.style.display="none");
+    document.getElementById(tab).style.display="block";
+    document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("nav-active"));
+    if(element) element.classList.add("nav-active");
+}
+switchTab('home', document.querySelector('.nav-item'));
+function openInfoDesk(){
+    window.location.href = "info-desk.html";
+}
+function logout() {
+
+    // 🔥 ANDROID SESSION CLEAR
+    if (window.Android) {
+        Android.logout();
+    }
+
+    // Firebase logout
+    firebase.auth().signOut().catch(()=>{});
+
+    // Web session clear
+    localStorage.clear();
+    sessionStorage.clear();
+
+    // HARD redirect (history clean)
+    window.location.href = "../index.html";
+}
+
+
+</script>
+</body>
+</html>

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Useful Links</title>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+<script src="../firebase-config.js"></script>
+
+<style>
+body{
+    margin:0;
+    font-family:Poppins, sans-serif;
+    background:#f4f4f4;
+}
+
+/* TOP BAR */
+.top-bar{
+    background:#e59b15;
+    color:#fff;
+    padding:30px 16px;
+    border-bottom-left-radius:25px;
+    border-bottom-right-radius:25px;
+    position:fixed;
+    top:0;
+    width:100%;
+    z-index:1000;
+}
+.top-bar h2{margin:0;font-size:22px}
+
+/* CONTENT */
+.container{
+    margin-top:90px;
+    padding:15px;
+}
+
+/* CARD */
+.card{
+    border-radius:14px;
+    padding:16px;
+    margin-bottom:12px;
+    box-shadow:0 3px 12px rgba(0,0,0,0.12);
+}
+.card:nth-child(4n+1){background:#ffe0e0;}
+.card:nth-child(4n+2){background:#d9f7f5;}
+.card:nth-child(4n+3){background:#fff0d6;}
+.card:nth-child(4n+4){background:#e0e8ff;}
+
+.card h4{
+    margin:0 0 14px;
+    font-size:18px;
+    font-weight:700;
+}
+.card a{
+    color:#0645ad;
+    display:block;
+    word-break:break-all;
+    font-size:15px;
+}
+.card p{
+    margin:6px 0 0;
+    font-size:15px;
+    line-height:1.5;
+}
+
+/* MOBILE */
+@media (max-width:600px){
+    .container{margin-top:80px;padding:12px;}
+    .card{padding:14px;border-radius:12px;}
+    .card h4{font-size:16px;}
+    .card a,.card p{font-size:14px;}
+}
+</style>
+</head>
+
+<body>
+
+<div class="top-bar">
+    <h2> Useful Links</h2>
+</div>
+
+<div class="container">
+    <div id="linkList">Loading...</div>
+</div>
+
+<script>
+/* ===== LOAD LINKS (READ ONLY) ===== */
+function loadLinks(){
+    db.collection("UsefulLinks")
+      .orderBy("sequence","asc")
+      .onSnapshot(snapshot=>{
+        let html="";
+        snapshot.forEach(doc=>{
+            const d = doc.data();
+            html += `
+            <div class="card">
+                <h4>${d.title}</h4>
+                <a href="${d.url}" target="_blank">${d.url}</a>
+                ${d.description ? `<p>${d.description}</p>` : ""}
+            </div>`;
+        });
+        document.getElementById("linkList").innerHTML =
+            html || "<p>No links available.</p>";
+      });
+}
+loadLinks();
+</script>
+
+</body>
+</html>

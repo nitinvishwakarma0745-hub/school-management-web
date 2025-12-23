@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Promote Students</title>
+
+<!-- Firebase (your config must set db = firebase.firestore()) -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+<script src="../firebase-config.js"></script>
+
+<!-- XLSX (for import) and jsPDF (for PDF export) -->
+<script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<style>
+:root{ --accent:#e59b15; --bg:#f4f4f4; --card:#fff; --shadow:0 4px 14px rgba(0,0,0,0.08); --muted:#666; }
+*{box-sizing:border-box}
+body{ margin:0; font-family:Poppins, sans-serif; background:var(--bg); color:#222; -webkit-font-smoothing:antialiased; }
+.top-bar{ position:fixed; top:0; left:0; right:0; background:var(--accent); color:#fff; padding:18px 16px; z-index:1000; border-bottom-left-radius:18px; }
+.top-bar h2{ margin:15px; font-size:22px; }
+.container{ padding:120px 16px 80px; max-width:100%; margin:0 auto; }
+
+/* TAB */
+.tab-row{ display:flex; gap:12px; margin-bottom:14px; }
+.tab-btn{
+    flex:1;
+    padding:14px;
+    border:none;
+    border-radius:10px;
+    background:#ffdcb0;
+    font-size:18px;
+    font-weight:bold;
+    cursor:pointer;
+    text-align:center;
+    margin-right: 60px;
+    margin-left:40px;
+  
+}
+
+.tab-btn.active{
+    background:#e59b15 !important;
+    color:white;
+}
+
+/* card */
+.card{ background:var(--card); border-radius:12px; padding:12px; box-shadow:var(--shadow); margin-bottom:12px;}
+.row{ display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+
+/* controls */
+.select, input[type="file"]{ padding:10px 40px; border-radius:8px; border:1px solid #ddd; font-size:15px; }
+.btn{ padding:12px 16px; font-size: 16px; border-radius:8px; border:none; cursor:pointer; background:#0f4bff; color:#fff; }
+.icon-btn{ padding:12px 16px; font-size: 16px; border-radius:8px; border:1px solid #eee; background:#fff; cursor:pointer; }
+
+/* student list */
+.students-list{ margin-top:12px; display:flex; flex-direction:column; gap:8px; max-height:380px; overflow:auto; }
+.student-item{ display:flex; gap:12px; align-items:center; padding:10px; border-radius:10px; background:#fafafa; border:1px solid #eee; }
+.student-item .meta{ flex:1; }
+.student-item strong{ display:block; font-size:16px; }
+.student-item small{ display:block; color:var(--muted); }
+
+/* loader */
+.loader{ border:3px solid rgba(255,255,255,0.4); border-top:3px solid transparent; width:16px; height:16px; border-radius:50%; animation:spin .8s linear infinite; display:inline-block; vertical-align:middle; }
+@keyframes spin{ to{ transform:rotate(360deg); } }
+
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <h2>Promote Students</h2>
+</div>
+
+<div class="container">
+
+  <!-- Tabs -->
+  <div class="tab-row">
+    <button class="tab-btn active" id="tabManual">Manual</button>
+    <button class="tab-btn" id="tabImport">Import Excel</button>
+  </div>
+
+  <!-- MANUAL PROMOTE -->
+  <div id="panelManual" class="card">
+    <div class="row" style="align-items:center;">
+      <div style="flex:1;">
+        <label>From Class (Select class to promote from)</label><br>
+        <select id="fromClass" class="select">
+          <option value="">-- Select Class --</option>
+          <option>Nursery</option><option>LKG</option><option>UKG</option>
+          <option>1st</option><option>2nd</option><option>3rd</option><option>4th</option>
+          <option>5th</option><option>6th</option><option>7th</option><option>8th</option>
+          <option>9th</option><option>10th</option><option>11th</option><option>12th</option>
+        </select>
+      </div>
+
+      <div style="flex:1;">
+        <label>To Class (Promote to)</label><br>
+        <select id="toClass" class="select">
+          <option value="">-- Select Class --</option>
+          <option>Nursery</option><option>LKG</option><option>UKG</option>
+          <option>1st</option><option>2nd</option><option>3rd</option><option>4th</option>
+          <option>5th</option><option>6th</option><option>7th</option><option>8th</option>
+          <option>9th</option><option>10th</option><option>11th</option><option>12th</option>
+        </select>
+      </div>
+
+      <div style="width:160px;">
+        <label>&nbsp;</label><br>
+        <button class="btn" id="loadClassBtn">Load Students</button>
+      </div>
+    </div>
+
+    <!-- Students list (ordered by roll) -->
+    <div class="students-list card" id="studentsList" style="margin-top:12px;">
+      <!-- injected student items -->
+      <div style="padding:12px;color:var(--muted)">No class loaded. Select "From Class" and click "Load Students".</div>
+    </div>
+
+    <div class="row" style="margin-top:12px; justify-content:space-between; align-items:center;">
+      <div style="display:flex;gap:10px;align-items:center;">
+        <input type="checkbox" id="selectAll"> <label for="selectAll">Select All</label>
+      </div>
+
+      <div style="display:flex;gap:8px;">
+        <button class="icon-btn" id="downloadPdfBtn">Download PDF</button>
+        <button class="btn" id="promoteBtn">Promote Selected</button>
+      </div>
+    </div>
+
+    <div id="manualMsg" style="margin-top:10px;color:green;display:none;"></div>
+  </div>
+
+  <!-- IMPORT PROMOTE -->
+  <div id="panelImport" class="card" style="display:none;">
+    <div>
+      <label>Upload Excel (columns: email OR uid, toClass)</label><br>
+      <input type="file" id="promoteExcel" accept=".xlsx,.xls">
+    </div>
+
+    <div style="margin-top:10px; display:flex; gap:8px;">
+      <button class="btn" id="importBtn">Import & Promote</button>
+      <button class="icon-btn" id="downloadSample">Sample Excel</button>
+    </div>
+
+    <div id="importLog" style="margin-top:12px; color:var(--muted)"></div>
+  </div>
+
+</div>
+
+<!-- Edit/Confirm Modal (simple) -->
+<!-- (Not strictly necessary but kept for confirmations) -->
+
+<script>
+/* ====== Helpers & Globals ====== */
+const dbRef = db; // from firebase-config.js
+let currentStudents = []; // array of { uid, name, roll, class, email, other... }
+
+/* Tab logic */
+const tabManual = document.getElementById('tabManual');
+const tabImport = document.getElementById('tabImport');
+const panelManual = document.getElementById('panelManual');
+const panelImport = document.getElementById('panelImport');
+
+tabManual.addEventListener('click', ()=>{ tabManual.classList.add('active'); tabImport.classList.remove('active'); panelManual.style.display='block'; panelImport.style.display='none'; });
+tabImport.addEventListener('click', ()=>{ tabImport.classList.add('active'); tabManual.classList.remove('active'); panelImport.style.display='block'; panelManual.style.display='none'; });
+
+/* Load students from selected fromClass ordered by roll */
+document.getElementById('loadClassBtn').addEventListener('click', async ()=>{
+  const fromClass = (document.getElementById('fromClass').value || '').trim();
+  const studentsList = document.getElementById('studentsList');
+  studentsList.innerHTML = '<div style="padding:12px;color:var(--muted)">Loading students... <span class="loader" style="margin-left:8px"></span></div>';
+  if(!fromClass){ studentsList.innerHTML = '<div style="padding:12px;color:red">Please select From Class.</div>'; return; }
+
+  try{
+    // get students under students/{class}/classStudents ordered by roll if roll stored numeric
+    const snap = await dbRef.collection('students').doc(fromClass).collection('classStudents').orderBy('roll').get();
+    currentStudents = [];
+    snap.forEach(doc => {
+      const d = doc.data();
+      currentStudents.push({ uid: doc.id, name: d.name || '', roll: d.roll || '', class: d.class || fromClass, email: d.email || '' , raw: d });
+    });
+
+    // fallback: if no docs or roll ordering not present, fetch users collection filter class
+    if(currentStudents.length === 0){
+      const snap2 = await dbRef.collection('users').where('class','==', fromClass).get();
+      snap2.forEach(doc => {
+        const d = doc.data();
+        currentStudents.push({ uid: doc.id, name: d.name || '', roll: d.roll || '', class: d.class || fromClass, email: d.email || '' , raw: d });
+      });
+      // sort by roll (number)
+      currentStudents.sort((a,b)=> (parseInt(a.roll)||999999) - (parseInt(b.roll)||999999));
+    }
+
+    renderStudentsList();
+  } catch(err){
+    console.error(err);
+    studentsList.innerHTML = '<div style="padding:12px;color:red">Error loading students: '+ err.message +'</div>';
+  }
+});
+
+function renderStudentsList(){
+  const list = document.getElementById('studentsList');
+  if(!currentStudents || currentStudents.length === 0){
+    list.innerHTML = '<div style="padding:12px;color:var(--muted)">No students in this class.</div>'; return;
+  }
+  list.innerHTML = '';
+  currentStudents.forEach(s=>{
+    const div = document.createElement('div');
+    div.className = 'student-item';
+    div.dataset.uid = s.uid;
+    div.innerHTML = `
+      <input type="checkbox" class="chk" data-uid="${s.uid}">
+      <div class="meta">
+        <strong>${s.name || '—'}</strong>
+        <small>Roll: ${s.roll || '—'} • Class: ${s.class || '—'}</small>
+        <small style="color:var(--muted)">${s.email || ''}</small>
+      </div>
+    `;
+    list.appendChild(div);
+  });
+
+  // selectAll behavior
+  document.getElementById('selectAll').checked = false;
+  document.getElementById('selectAll').onclick = function(){ document.querySelectorAll('.students-list .chk').forEach(cb=> cb.checked = this.checked); };
+}
+
+/* Promote selected */
+document.getElementById('promoteBtn').addEventListener('click', async ()=>{
+  const toClass = (document.getElementById('toClass').value || '').trim();
+  const fromClass = (document.getElementById('fromClass').value || '').trim();
+  if(!toClass || !fromClass){ alert('Select both From Class and To Class'); return; }
+  if(toClass === fromClass){ alert('From and To class are same'); return; }
+
+  const checked = Array.from(document.querySelectorAll('.students-list .chk')).filter(cb=> cb.checked).map(cb=> cb.dataset.uid);
+  if(checked.length === 0){ alert('Select at least one student to promote'); return; }
+
+  // start loader & disable
+  const promoteBtn = document.getElementById('promoteBtn');
+  promoteBtn.disabled = true;
+  const oldText = promoteBtn.innerText;
+  promoteBtn.innerHTML = 'Promoting... <span class="loader"></span>';
+
+  const promoted = [];
+  for(const uid of checked){
+    try{
+      // get latest user doc
+      const uDoc = await dbRef.collection('users').doc(uid).get();
+      if(!uDoc.exists) { console.warn('User doc missing for', uid); continue; }
+      const u = uDoc.data();
+
+      // 1) update users doc -> set class = toClass
+      await dbRef.collection('users').doc(uid).update({ class: toClass });
+
+      // 2) create under students/{toClass}/classStudents/{uid}
+      await dbRef.collection('students').doc(toClass).collection('classStudents').doc(uid).set({
+        name: u.name || '',
+        roll: u.roll || '',
+        gender: u.gender || '',
+        class: toClass,
+        uid: uid,
+        email: u.email || ''
+      });
+
+      // 3) delete from old students path (if exists)
+      await dbRef.collection('students').doc(fromClass).collection('classStudents').doc(uid).delete().catch(()=>{});
+
+      promoted.push({ uid, name: u.name || '', roll: u.roll || '', from: fromClass, to: toClass, email: u.email || '' });
+    } catch(err){
+      console.error('Promote error', err);
+    }
+  }
+
+  // stop loader
+  promoteBtn.disabled = false;
+  promoteBtn.innerText = oldText;
+
+  // refresh list
+  document.getElementById('manualMsg').style.display = 'block';
+  document.getElementById('manualMsg').innerText = `Promoted ${promoted.length} / ${checked.length} students.`;
+
+  // reload students in fromClass
+  document.getElementById('loadClassBtn').click();
+
+  // allow download PDF of promoted list
+  if(promoted.length > 0){
+    window.__lastPromoted = promoted; // stored for PDF download
+    if(confirm('Download promoted list as PDF now?')) downloadPromotedPDF(promoted);
+  }
+});
+
+/* Download PDF of promoted array */
+async function downloadPromotedPDF(promoted){
+  // using jsPDF (UMD)
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
+  const margin = 40;
+  const lineHeight = 18;
+  let y = 40;
+  doc.setFontSize(14);
+  doc.text('Promoted Students', margin, y);
+  y += 24;
+  doc.setFontSize(11);
+  doc.text(`Date: ${new Date().toLocaleString()}`, margin, y);
+  y += 18;
+  // header
+  doc.setFontSize(12);
+  doc.text('No.', margin, y);
+  doc.text('Name', margin + 40, y);
+  doc.text('Roll', margin + 300, y);
+  doc.text('From → To', margin + 370, y);
+  y += 12;
+
+  doc.setLineWidth(0.5);
+  doc.line(margin, y, 555, y);
+  y += 12;
+
+  promoted.forEach((p, i) => {
+    if(y > 740){ doc.addPage(); y = 40; }
+    doc.setFontSize(11);
+    doc.text(String(i+1), margin, y);
+    doc.text(p.name || '-', margin + 40, y);
+    doc.text(String(p.roll || '-'), margin + 300, y);
+    doc.text(`${p.from} → ${p.to}`, margin + 370, y);
+    y += lineHeight;
+  });
+
+  doc.save('promoted_students.pdf');
+}
+
+/* Download PDF button uses last promoted (or current selected) */
+document.getElementById('downloadPdfBtn').addEventListener('click', ()=>{
+  let promoted = window.__lastPromoted;
+  if(!promoted || promoted.length === 0){
+    // build a list from currently selected (without performing promote)
+    const fromClass = (document.getElementById('fromClass').value || '').trim();
+    const toClass = (document.getElementById('toClass').value || '').trim() || '—';
+    const checked = Array.from(document.querySelectorAll('.students-list .chk')).filter(cb=> cb.checked).map(cb=> cb.dataset.uid);
+    if(checked.length === 0){ alert('Select students and click "Download PDF" to export the selection.'); return; }
+    // fetch their names quickly
+    promoted = [];
+    Promise.all(checked.map(uid => dbRef.collection('users').doc(uid).get().then(d=> ({ uid, name: d.exists?d.data().name:'', roll: d.exists?d.data().roll:'', from: fromClass, to: toClass })) ))
+      .then(arr => { downloadPromotedPDF(arr); });
+    return;
+  }
+  downloadPromotedPDF(promoted);
+});
+
+/* IMPORT via Excel */
+document.getElementById('importBtn').addEventListener('click', async ()=>{
+  const fileInput = document.getElementById('promoteExcel');
+  const file = fileInput.files[0];
+  if(!file){ alert('Choose an Excel file.'); return; }
+
+  const importBtn = document.getElementById('importBtn');
+  const log = document.getElementById('importLog');
+  importBtn.disabled = true;
+  importBtn.innerHTML = 'Importing... <span class="loader"></span>';
+  log.innerText = '';
+
+  const reader = new FileReader();
+  reader.onload = async function(e){
+    try{
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, { type: 'array' });
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(sheet);
+
+      // Expected columns: either uid OR email, and toClass
+      let success = 0, fail = 0;
+      for(const row of rows){
+        const toClass = (row.toClass || row.toclass || row['to class'] || row['ToClass'] || row['to'] || '').toString().trim();
+        const uid = (row.uid || '').toString().trim();
+        const email = (row.email || '').toString().trim();
+
+        if(!toClass){ fail++; continue; }
+
+        try{
+          let targetUid = uid;
+          let userData = null;
+          if(!targetUid && email){
+            // find user by email in users collection
+            const q = await dbRef.collection('users').where('email','==', email).limit(1).get();
+            if(!q.empty){ targetUid = q.docs[0].id; userData = q.docs[0].data(); }
+          } else if(targetUid){
+            const doc = await dbRef.collection('users').doc(targetUid).get();
+            if(doc.exists) userData = doc.data();
+          }
+
+          if(!targetUid || !userData){ fail++; continue; }
+
+          // update users doc
+          await dbRef.collection('users').doc(targetUid).update({ class: toClass });
+
+          // add to students/{toClass}
+          await dbRef.collection('students').doc(toClass).collection('classStudents').doc(targetUid).set({
+            name: userData.name || '',
+            roll: userData.roll || '',
+            gender: userData.gender || '',
+            class: toClass,
+            uid: targetUid,
+            email: userData.email || ''
+          });
+
+          // remove from old class if exists (userData.class)
+          const oldClass = (userData.class || '').toString().trim();
+          if(oldClass) await dbRef.collection('students').doc(oldClass).collection('classStudents').doc(targetUid).delete().catch(()=>{});
+          success++;
+        } catch(er){ console.error('Row promote error', er); fail++; }
+      }
+
+      log.innerText = `Import finished. Success: ${success}, Failed: ${fail}.`;
+      fileInput.value = '';
+    } catch(err){
+      console.error(err);
+      alert('Import error: ' + err.message);
+    }
+    importBtn.disabled = false;
+    importBtn.innerText = 'Import & Promote';
+  };
+  reader.readAsArrayBuffer(file);
+});
+
+/* download sample excel */
+document.getElementById('downloadSample').addEventListener('click', ()=>{
+  // create a small csv -> user can open in Excel
+  const csv = 'uid,email,toClass\n(uid or leave empty),user@example.com,11th\n';
+  const blob = new Blob([csv], { type:'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'promote_sample.csv'; a.click();
+  URL.revokeObjectURL(url);
+});
+
+/* initial */
+(function init(){
+  // nothing to auto-load
+})();
+</script>
+
+</body>
+</html>

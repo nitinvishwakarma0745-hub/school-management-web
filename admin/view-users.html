@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>View Users</title>
+
+<!-- Firebase (your config file must initialise firebase and set `db = firebase.firestore()` ) -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+<script src="../firebase-config.js"></script>
+
+<style>
+  /* --- LOADER SHOULD NOT CHANGE BUTTON SIZE --- */
+.loader{
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #555;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  animation: spin 0.7s linear infinite;
+  display: none;
+}
+/* Refresh button should contain the loader */
+#refreshAdmin,
+#refreshTeacher,
+#refreshStudent {
+    position: relative !important; /* THIS FIXES THE ISSUE */
+}
+/* Only Refresh buttons bigger */
+#refreshAdmin,
+#refreshTeacher,
+#refreshStudent {
+    min-width: 70px;      /* बटन की चौड़ाई बढ़ गई */
+    padding: 10px 12px;    /* height + padding बढ़ गई */
+    font-size: 15px;       /* text बड़ा */
+    border-radius: 10px;   /* अच्छा rounded look */
+}
+
+/* Loader size match with bigger button */
+#refreshAdmin .loader,
+#refreshTeacher .loader,
+#refreshStudent .loader {
+    width: 20px;
+    height: 20px;
+}
+
+.btn-save,
+.btn-danger,
+.btn-close {
+  position: relative;  /* loader center */
+  min-width: 90px;     /* FIXED width so size never changes */
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 12px;
+}
+
+/* Spinner animation */
+@keyframes spin {
+  0% { transform: translate(-50%, -50%) rotate(0deg); }
+  100% { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+
+
+.btn-loading{
+  opacity: 0.7;
+  pointer-events: none;
+}
+ 
+:root{
+  --accent:#e59b15;
+  --card:#fff;
+  --bg:#f4f4f4;
+  --shadow:0 4px 14px rgba(0,0,0,0.08);
+  --muted:#666;
+  --pill-bg:#ffdcb0;
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:var(--bg);
+  font-family:Poppins, sans-serif;
+  -webkit-font-smoothing:antialiased;
+  color:#222;
+  overflow-x:hidden;
+}
+
+/* Top bar */
+/* FIXED TOP BAR */
+.top-bar{
+  position:fixed;
+  top:0; left:0; right:0;
+  background:var(--accent);
+  color:white;
+  padding:18px 16px;
+  border-bottom-left-radius:18px;
+  z-index:1000;
+}
+.top-bar h2{ margin:8px; font-size:22px; }
+.btn-text {
+    visibility: visible; /* default */
+}
+
+.btn-loading .btn-text {
+    visibility: hidden; /* button size same रहेगा */
+}
+
+/* FIXED TABS */
+.tabs-row{
+  position: fixed;
+  top: 60px;
+  left: 0;
+  right: 0;
+  z-index: 900;
+  padding: 10px 16px;
+  background: var(--bg);
+  display:flex;
+  gap:12px;
+
+}
+.tab-btn{
+  flex:1;
+  padding:12px;
+  border-radius:10px;
+  border:none;
+  cursor:pointer;
+  font-weight:600;
+  background:var(--pill-bg);
+  text-align:center;
+  font-size: 18px;
+  margin-top: 20px;
+}
+.tab-btn.active{ background:var(--accent); color:#fff; }
+
+/* USERS SCROLL AREA */
+.content{
+  margin-top: 240px; /* enough space for fixed elements */
+  padding: 0 16px;
+  height: calc(100vh - 240px);
+  overflow-y: auto;
+ 
+}
+
+.filter-card{
+  position: fixed;
+  top: 145px;
+  left: 0;
+  right: 0;
+  width: calc(100% - 32px);   /* same side spacing as cards */
+  margin: 0 auto;
+  padding: 14px;
+  background: #fff;
+  border-radius: 12px;        /* same roundness */
+  box-shadow: var(--shadow);
+}
+
+.filter-row{
+  display:flex;
+  gap:12px;
+  align-items:center;
+  flex-wrap:wrap;
+}
+.filter-row .input, .filter-row select {
+  padding:10px 14px;
+  border-radius:8px;
+  border:1px solid #ddd;
+  font-size:15px;
+  flex:1;
+  min-width:150px;
+}
+
+/* class selector for student */
+.class-filter{
+  display:flex;
+  gap:12px;
+  margin-top:10px;
+
+}
+
+/* Student panel requires extra top space because filter card is 2-row */
+#panelStudent {
+   padding-top: 50px !important;
+}
+
+/* USERS LIST */
+.users-list{
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  margin-top:12px;
+}
+
+/* user card */
+.user-card{
+  background:var(--card);
+  border-radius:12px;
+  padding:14px;
+  box-shadow:var(--shadow);
+  display:flex;
+  gap:14px;
+  align-items:center;
+}
+.avatar{
+  width:56px;height:56px;border-radius:12px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:26px;background:#fff;border:1px solid #eee;
+}
+.user-meta{ flex:1; }
+.user-meta strong{ display:block; font-size:17px; margin-bottom:6px; }
+.user-meta small{ display:block; color:var(--muted); }
+
+/* actions (edit/view) */
+.user-actions{ display:flex; gap:8px; margin-left:8px; }
+.icon-btn{ background:#fff;border:1px solid #eee;padding:8px;border-radius:10px; cursor:pointer; }
+
+/* modal (edit) */
+.modal-backdrop{
+  position:fixed; inset:0; background:rgba(0,0,0,0.45);
+  display:none; align-items:center; justify-content:center; z-index:2000;
+}
+#editEmail:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background: #f5f5f5;
+}
+
+.modal{
+  width:92%; max-width:820px; background:#fff; border-radius:12px; padding:16px; box-shadow:0 10px 40px rgba(0,0,0,0.25);
+}
+.form-row{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px; }
+.form-row input, .form-row select { flex:1; padding:10px; border-radius:8px; border:1px solid #ccc; font-size:15px; }
+.modal-footer{ display:flex; gap:10px; justify-content:flex-end; margin-top:8px; }
+.btn-save{ background:#0f4bff;color:#fff;padding:10px 14px;border:none;border-radius:8px; cursor:pointer; }
+.btn-danger{ background:#ff4d4f;color:#fff;padding:10px 14px;border:none;border-radius:8px; cursor:pointer; }
+.btn-close{ background:#fff;border:1px solid #ddd;padding:10px;border-radius:8px; cursor:pointer; }
+/* ---- Mobile fix for edit icon (max-width: 600px) ---- */
+@media (max-width: 600px){
+@media(max-width:600px){
+  #panelStudent .filter-card{
+      position: fixed;
+      top: 145px;
+      width: calc(100% - 32px);
+      height: auto !important;      /* ⭐ FIX */
+      padding-bottom: 15px;
+      z-index: 999;
+  }
+}
+@media(max-width:600px){
+  #panelStudent .class-filter{
+     display: block !important;      /* ⭐ FIX */
+     margin-top: 10px;
+  }
+    #panelStudent .class-filter select{
+      width: 100% !important;      /* पूरा refresh btn तक */
+      display: block;
+  }
+
+  #panelStudent .class-filter{
+      width: 100% !important;      /* full-row */
+  }
+}
+@media(max-width:600px){
+  #panelStudent .users-list{
+      margin-top: 15px !important;  /* ⭐ WORKS 100% */
+  }
+}
+.users-list{
+      padding-bottom: 60px !important;   /* ⭐ Extra bottom space */
+  }
+  .user-card{
+    position: relative;
+    padding-right: 50px; /* icon ke liye jagah */
+  }
+
+  .user-actions{
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+
+  .icon-btn{
+    padding: 6px 7px;
+  }
+
+  .avatar{
+    width: 46px;
+    height: 46px;
+    font-size: 22px;
+  }
+
+  .user-meta strong{
+    font-size: 15px;
+  }
+
+  .user-meta small{
+    font-size: 12px;
+  }
+}
+
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <h2>View Users</h2>
+</div>
+
+<!-- Tabs -->
+<div class="tabs-row">
+  <button class="tab-btn active" id="tabAdmin">Admin</button>
+  <button class="tab-btn" id="tabTeacher">Teacher</button>
+  <button class="tab-btn" id="tabStudent">Student</button>
+</div>
+
+<div class="content">
+
+  <!-- ADMIN CONTENT -->
+  <div id="panelAdmin" class="panel" style="display:block">
+    <div class="filter-card">
+      <strong>Search / Filter (Admin)</strong>
+      <div class="filter-row" style="margin-top:8px">
+        <input class="input" id="searchAdmin" placeholder="Search name, username or email">
+      <button class="icon-btn" id="refreshAdmin">
+  <span class="btn-text">Refresh</span>
+  <div class="loader"></div>
+</button>
+
+      </div>
+    </div>
+
+    <div id="listAdmin" class="users-list"></div>
+  </div>
+
+  <!-- TEACHER CONTENT -->
+  <div id="panelTeacher" class="panel" style="display:none">
+    <div class="filter-card">
+      <strong>Search / Filter (Teacher)</strong>
+      <div class="filter-row" style="margin-top:8px">
+        <input class="input" id="searchTeacher" placeholder="Search name, username or email">
+      <button class="icon-btn" id="refreshTeacher">
+  <span class="btn-text">Refresh</span>
+  <div class="loader"></div>
+</button>
+
+
+      </div>
+    </div>
+
+    <div id="listTeacher" class="users-list"></div>
+  </div>
+
+  <!-- STUDENT CONTENT -->
+  <div id="panelStudent" class="panel" style="display:none">
+    <div class="filter-card">
+      <strong>Search / Filter (Student)</strong>
+      <div class="filter-row" style="margin-top:8px">
+        <input class="input" id="searchStudent" placeholder="Search name, username or email">
+<button class="icon-btn" id="refreshStudent">
+  <span class="btn-text">Refresh</span>
+  <div class="loader"></div>
+</button>
+
+      </div>
+
+      <div class="class-filter">
+        <select id="studentClassSelect" style="padding:10px;border-radius:8px;border:1px solid #ddd;font-size:15px;flex:1;">
+          <option value="">All Classes</option>
+          <option>Nursery</option><option>LKG</option><option>UKG</option>
+          <option>1st</option><option>2nd</option><option>3rd</option><option>4th</option>
+          <option>5th</option><option>6th</option><option>7th</option><option>8th</option>
+          <option>9th</option><option>10th</option><option>11th</option><option>12th</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="listStudent" class="users-list"></div>
+  </div>
+
+</div>
+
+<!-- Edit Modal -->
+<div id="modalBackdrop" class="modal-backdrop">
+  <div class="modal" role="dialog" aria-modal="true">
+    <h3>Edit User</h3>
+
+    <div style="margin-top:8px;">
+      <div class="form-row">
+        <input id="editName" placeholder="Full name" />
+        <input id="editUsername" placeholder="Username" />
+      </div>
+
+      <div class="form-row">
+        <input id="editEmail" placeholder="Email (note: doesn't change Auth here)" disabled />
+
+        <select id="editRole">
+          <option value="student">Student</option>
+          <option value="teacher">Teacher</option>
+          <option value="admin">Admin</option>
+        </select>
+      </div>
+
+      <div id="editStudentRow" class="form-row">
+        <select id="editClass">
+          <option value="">Select Class</option>
+          <option>Nursery</option><option>LKG</option><option>UKG</option>
+          <option>1st</option><option>2nd</option><option>3rd</option><option>4th</option>
+          <option>5th</option><option>6th</option><option>7th</option><option>8th</option>
+          <option>9th</option><option>10th</option><option>11th</option><option>12th</option>
+        </select>
+        <input id="editRoll" placeholder="Roll number" />
+      </div>
+
+      <div class="form-row">
+        <select id="editGender">
+          <option value="">Gender</option>
+          <option>Male</option>
+          <option>Female</option>
+        </select>
+        <input id="editDob" type="date" />
+      </div>
+
+      <div class="form-row">
+        <input id="editPhone" placeholder="Phone" />
+        <input id="editYear" placeholder="Session (2025-26)" />
+      </div>
+
+      <div style="margin-top:8px; font-size:13px; color:#666">
+        <small>Note: editing `email` here only updates Firestore `users` doc. Updating Firebase Auth email/password requires re-auth or Admin SDK.</small>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-danger" id="deleteBtn">
+  <span class="btn-text">Delete</span>
+  <div class="loader"></div>
+</button>
+
+     <button class="btn-save" id="saveBtn">
+  <span class="btn-text">Save</span>
+  <div class="loader"></div>
+</button>
+
+      <button class="btn-close" id="closeModal">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+ function startLoading(btn){
+    btn.classList.add("btn-loading");
+    btn.querySelector(".loader").style.display = "block";
+}
+
+function stopLoading(btn){
+    btn.classList.remove("btn-loading");
+    btn.querySelector(".loader").style.display = "none";
+}
+
+document.getElementById('refreshAdmin').addEventListener('click', async ()=>{
+  const btn = document.getElementById('refreshAdmin');
+  startLoading(btn);
+  await loadUsers();
+  stopLoading(btn);
+});
+
+document.getElementById('refreshTeacher').addEventListener('click', async ()=>{
+  const btn = document.getElementById('refreshTeacher');
+  startLoading(btn);
+  await loadUsers();
+  stopLoading(btn);
+});
+
+document.getElementById('refreshStudent').addEventListener('click', async ()=>{
+  const btn = document.getElementById('refreshStudent');
+  startLoading(btn);
+  await loadUsers();
+  stopLoading(btn);
+});
+
+/* ====== Globals ====== */
+const dbRef = db; // from your firebase-config.js
+let usersCache = [];     // local copy
+let editingUser = null;  // object { uid, data }
+
+/* ====== Tabs logic ====== */
+const tabAdmin = document.getElementById('tabAdmin');
+const tabTeacher = document.getElementById('tabTeacher');
+const tabStudent = document.getElementById('tabStudent');
+
+const panelAdmin = document.getElementById('panelAdmin');
+const panelTeacher = document.getElementById('panelTeacher');
+const panelStudent = document.getElementById('panelStudent');
+
+function setActiveTab(tab){
+  tabAdmin.classList.remove('active');
+  tabTeacher.classList.remove('active');
+  tabStudent.classList.remove('active');
+  panelAdmin.style.display = 'none';
+  panelTeacher.style.display = 'none';
+  panelStudent.style.display = 'none';
+
+  if(tab === 'admin'){ tabAdmin.classList.add('active'); panelAdmin.style.display='block'; }
+  if(tab === 'teacher'){ tabTeacher.classList.add('active'); panelTeacher.style.display='block'; }
+  if(tab === 'student'){ tabStudent.classList.add('active'); panelStudent.style.display='block'; }
+}
+tabAdmin.addEventListener('click', ()=> setActiveTab('admin'));
+tabTeacher.addEventListener('click', ()=> setActiveTab('teacher'));
+tabStudent.addEventListener('click', ()=> setActiveTab('student'));
+
+/* ====== Helpers ====== */
+function normalizeRole(r){ return (r||'').toString().trim().toLowerCase(); }
+function capitalizeFirst(s){ if(!s) return ''; s = s.toString().trim(); return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase(); }
+
+function createCard(user){
+  const role = normalizeRole(user.role);
+  const avatar = (user.gender || '').toLowerCase() === 'female' ? '👧' : (user.gender || '').toLowerCase() === 'male' ? '👦' : '👤';
+  const div = document.createElement('div');
+  div.className = 'user-card';
+  div.dataset.uid = user.uid || '';
+  div.innerHTML = `
+    <div class="avatar">${avatar}</div>
+    <div class="user-meta">
+      <strong>${user.name || '—'}</strong>
+      <small>${user.username || ''} • Role: ${ (user.role || '').toUpperCase() }</small>
+      <small>${user.class ? 'Class: ' + user.class + (user.roll ? ' • Roll: '+user.roll : '') : ''}</small>
+      <small style="color:var(--muted)">${user.email || ''}</small>
+    </div>
+    <div class="user-actions">
+      <button class="icon-btn btn-edit">✏️</button>
+    </div>
+  `;
+  div.querySelector('.btn-edit').addEventListener('click', (e)=>{
+    e.stopPropagation();
+    openEditModal(user);
+  });
+  div.addEventListener('click', ()=> openEditModal(user));
+  return div;
+}
+
+/* ====== Load & Render ====== */
+async function loadUsers(){
+  // load all users once (you can optimize by role queries too)
+  try{
+    const snap = await dbRef.collection('users').orderBy('name').get();
+    usersCache = [];
+    snap.forEach(d=> usersCache.push({ uid: d.id, ...d.data() }) );
+    renderAll();
+  } catch(err){
+    console.error('Load users error', err);
+    alert('Error loading users: ' + err.message);
+  }
+}
+
+/* Render per tab */
+function renderAdmin(){
+  const q = (document.getElementById('searchAdmin').value || '').trim().toLowerCase();
+  const list = document.getElementById('listAdmin');
+  list.innerHTML = '';
+  const filtered = usersCache.filter(u => normalizeRole(u.role) === 'admin' && (q === '' || (`${u.name} ${u.username} ${u.email}`).toLowerCase().includes(q)));
+  if(filtered.length === 0){ list.innerHTML = '<div style="padding:12px;color:var(--muted)">No admin found.</div>'; return; }
+  filtered.forEach(u => list.appendChild(createCard(u)));
+}
+
+function renderTeacher(){
+  const q = (document.getElementById('searchTeacher').value || '').trim().toLowerCase();
+  const list = document.getElementById('listTeacher');
+  list.innerHTML = '';
+  const filtered = usersCache.filter(u => normalizeRole(u.role) === 'teacher' && (q === '' || (`${u.name} ${u.username} ${u.email}`).toLowerCase().includes(q)));
+  if(filtered.length === 0){ list.innerHTML = '<div style="padding:12px;color:var(--muted)">No teacher found.</div>'; return; }
+  filtered.forEach(u => list.appendChild(createCard(u)));
+}
+
+function renderStudent(){
+  const q = (document.getElementById('searchStudent').value || '').trim().toLowerCase();
+  const selectedClass = (document.getElementById('studentClassSelect').value || '').trim();
+  const list = document.getElementById('listStudent');
+  list.innerHTML = '';
+  let filtered = usersCache.filter(u => normalizeRole(u.role) === 'student' && (q === '' || (`${u.name} ${u.username} ${u.email}`).toLowerCase().includes(q)));
+  if(selectedClass) filtered = filtered.filter(u => (u.class||'') === selectedClass);
+  // Sort by roll (numeric). If roll missing, put at end.
+  filtered.sort((a,b)=>{
+    const ra = parseInt(a.roll) || 999999;
+    const rb = parseInt(b.roll) || 999999;
+    return ra - rb;
+  });
+  if(filtered.length === 0){ list.innerHTML = '<div style="padding:12px;color:var(--muted)">No students found.</div>'; return; }
+  filtered.forEach(u => list.appendChild(createCard(u)));
+}
+
+function renderAll(){
+  renderAdmin(); renderTeacher(); renderStudent();
+}
+
+/* ====== Edit modal ====== */
+const modalBackdrop = document.getElementById('modalBackdrop');
+const editName = document.getElementById('editName');
+const editUsername = document.getElementById('editUsername');
+const editEmail = document.getElementById('editEmail');
+const editRole = document.getElementById('editRole');
+const editClass = document.getElementById('editClass');
+const editRoll = document.getElementById('editRoll');
+const editGender = document.getElementById('editGender');
+const editDob = document.getElementById('editDob');
+const editPhone = document.getElementById('editPhone');
+const editYear = document.getElementById('editYear');
+const editStudentRow = document.getElementById('editStudentRow');
+
+function openEditModal(user){
+  editingUser = { uid: user.uid, data: {...user} };
+  editName.value = user.name || '';
+  editUsername.value = user.username || '';
+  editEmail.value = user.email || '';
+  editRole.value = (user.role || '').toLowerCase() || 'student';
+  editClass.value = user.class || '';
+  editRoll.value = user.roll || '';
+  editGender.value = user.gender || '';
+  // convert DD-MM-YYYY (if stored like that) to YYYY-MM-DD for input
+  const dobVal = user.dob || '';
+  if(dobVal){
+    if(dobVal.includes('-')){
+      const p = dobVal.split('-');
+      if(p[0].length === 4) { editDob.value = dobVal; } // already yyyy-mm-dd
+      else { editDob.value = `${p[2]}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`; }
+    } else {
+      editDob.value = '';
+    }
+  } else editDob.value = '';
+  editPhone.value = user.phone || '';
+  editYear.value = user.year || '';
+  // show/hide student row
+  if(normalizeRole(user.role) === 'student') editStudentRow.style.display = 'flex';
+  else editStudentRow.style.display = 'none';
+  modalBackdrop.style.display = 'flex';
+}
+
+/* close modal */
+document.getElementById('closeModal').addEventListener('click', ()=>{
+  modalBackdrop.style.display = 'none';
+  editingUser = null;
+});
+
+/* when role change in modal, toggle student fields */
+editRole.addEventListener('change', ()=>{
+  if(normalizeRole(editRole.value) === 'student') editStudentRow.style.display = 'flex';
+  else editStudentRow.style.display = 'none';
+});
+
+/* Save changes */
+/* Save changes (With Loader) */
+document.getElementById('saveBtn').addEventListener('click', async ()=>{
+  const btn = document.getElementById('saveBtn');
+  startLoading(btn);
+
+  try {
+
+    const uid = editingUser.uid;
+    const old = editingUser.data || {};
+
+    const name = editName.value.trim();
+    const username = editUsername.value.trim();
+    const email = editEmail.value.trim();
+    const newRole = editRole.value.trim().toLowerCase();
+    const newClass = editClass.value.trim();
+    const newRoll = editRoll.value.trim();
+    const gender = editGender.value.trim();
+    const phone = editPhone.value.trim();
+    const year = editYear.value.trim();
+
+    let dob = "";
+    if (editDob.value) {
+      const p = editDob.value.split("-");
+      dob = `${p[2]}-${p[1]}-${p[0]}`;
+    }
+
+    /* ----------------------------------------------------
+       1️⃣ MAIN users DOCUMENT UPDATE
+       ---------------------------------------------------- */
+
+    let updateData = {
+      name, username, email, role: newRole, gender, dob, phone, year
+    };
+
+    // role student है तभी class/roll add होगा
+    if(newRole === "student"){
+      updateData.class = newClass;
+      updateData.roll = newRoll;
+    } else {
+      // role change → student fields हटाओ
+      updateData.class = "";
+      updateData.roll = "";
+    }
+
+    await dbRef.collection("users").doc(uid).update(updateData);
+
+
+    /* ----------------------------------------------------
+       2️⃣ OLD STUDENT PATH DELETE (अगर पहले student था)
+       ---------------------------------------------------- */
+    if (old.role === "student" && old.class) {
+      await dbRef.collection("students")
+        .doc(old.class)
+        .collection("classStudents")
+        .doc(uid)
+        .delete()
+        .catch(()=>{});
+    }
+
+
+    /* ----------------------------------------------------
+       3️⃣ NEW STUDENT PATH CREATE (अगर role अब student है)
+       ---------------------------------------------------- */
+    if (newRole === "student" && newClass) {
+      await dbRef.collection("students")
+        .doc(newClass)
+        .collection("classStudents")
+        .doc(uid)
+        .set({
+          uid, name, username, email,
+          role: newRole,
+          class: newClass,
+          roll: newRoll,
+          gender, dob, phone, year
+        });
+    }
+
+
+    alert("Saved successfully!");
+    modalBackdrop.style.display = "none";
+    editingUser = null;
+    await loadUsers();
+
+  } catch (err) {
+    alert("Save error: " + err.message);
+  }
+
+  stopLoading(btn);
+});
+
+
+/* Delete user (Firestore only) */
+/* Delete user (With Loader) */
+document.getElementById('deleteBtn').addEventListener('click', async ()=>{
+  const btn = document.getElementById('deleteBtn');
+  startLoading(btn);
+
+  try {
+    if (!editingUser) return;
+
+    if (!confirm("Delete this user?")) return;
+
+    const uid = editingUser.uid;
+    const oldClass = editingUser.data.class || "";
+    const oldRole = editingUser.data.role || "";
+
+    // Delete from users collection
+    await dbRef.collection("users").doc(uid).delete();
+
+    // Delete from student path if student
+    if (oldRole === "student" && oldClass) {
+      await dbRef.collection("students")
+        .doc(oldClass)
+        .collection("classStudents")
+        .doc(uid)
+        .delete()
+        .catch(()=>{});
+    }
+
+    alert("Deleted successfully!");
+    modalBackdrop.style.display = "none";
+    editingUser = null;
+    await loadUsers();
+
+  } catch (err) {
+    alert("Delete error: " + err.message);
+  }
+
+  stopLoading(btn);
+});
+
+document.getElementById('searchAdmin').addEventListener('input', renderAdmin);
+document.getElementById('searchTeacher').addEventListener('input', renderTeacher);
+document.getElementById('searchStudent').addEventListener('input', renderStudent);
+/* ---- REFRESH BUTTONS WITH LOADER ---- */
+
+document.getElementById('refreshAdmin').addEventListener('click', async ()=>{
+  const btn = document.getElementById('refreshAdmin');
+  startLoading(btn);
+  await loadUsers();
+  stopLoading(btn);
+});
+
+document.getElementById('refreshTeacher').addEventListener('click', async ()=>{
+  const btn = document.getElementById('refreshTeacher');
+  startLoading(btn);
+  await loadUsers();
+  stopLoading(btn);
+});
+
+document.getElementById('refreshStudent').addEventListener('click', async ()=>{
+  const btn = document.getElementById('refreshStudent');
+  startLoading(btn);
+  await loadUsers();
+  stopLoading(btn);
+});
+
+/* initial load */
+loadUsers();
+
+</script>
+</body>
+</html>

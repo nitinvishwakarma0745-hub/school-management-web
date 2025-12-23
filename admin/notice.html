@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Notice Panel</title>
+
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+<script src="../firebase-config.js"></script>
+
+<style>
+body{
+  margin:0;
+  font-family:Poppins, sans-serif;
+  background:#f4f4f4;
+}
+
+/* TOP BAR */
+.top-bar{
+  background:#e59b15;
+  color:#fff;
+  padding:22px 16px;
+  border-bottom-left-radius:25px;
+  border-bottom-right-radius:25px;
+  position:fixed;
+  top:0;
+  width:100%;
+  z-index:1000;
+}
+.top-bar h2{
+  margin:0;
+  font-size:26px;
+}
+.top-bar p{
+  margin:4px 0 0;
+  font-size:16px;
+}
+
+/* CONTENT */
+.container{
+  padding:120px 16px 40px;
+  max-width:900px;
+  margin:auto;
+}
+
+.card{
+  background:#fff;
+  padding:20px;
+  border-radius:16px;
+  box-shadow:0 4px 14px rgba(0,0,0,0.12);
+  margin-bottom:20px;
+}
+
+.card h3{
+  margin-bottom:15px;
+}
+
+input, textarea, select{
+  width:100%;
+  padding:12px;
+  margin-bottom:12px;
+  border-radius:10px;
+  border:1px solid #ccc;
+  font-size:15px;
+}
+
+textarea{ resize:none; height:90px; }
+
+button{
+  width:100%;
+  padding:12px;
+  background:#e59b15;
+  border:none;
+  border-radius:10px;
+  color:#fff;
+  font-size:16px;
+  cursor:pointer;
+}
+
+.notice-item{
+  border-bottom:1px solid #eee;
+  padding:10px 0;
+}
+.notice-item:last-child{ border:none; }
+.notice-item small{ color:#777; }
+
+.delete-btn{
+  background:#e74c3c;
+  margin-top:8px;
+}
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <h2>📢 Notice Panel</h2>
+  <p>Admin Dashboard</p>
+</div>
+
+<div class="container">
+
+  <!-- CREATE NOTICE -->
+  <div class="card">
+    <h3>Create New Notice</h3>
+    <input type="text" id="noticeTitle" placeholder="Notice Title">
+    <textarea id="noticeMsg" placeholder="Write notice message"></textarea>
+    <select id="noticeAudience">
+      <option value="All">All</option>
+      <option value="Students">Students</option>
+      <option value="Teachers">Teachers</option>
+    </select>
+    <button onclick="publishNotice()">Publish Notice</button>
+  </div>
+
+  <!-- NOTICE LIST -->
+  <div class="card">
+    <h3>Published Notices</h3>
+    <div id="noticeList">Loading...</div>
+  </div>
+
+</div>
+
+<script>
+function publishNotice(){
+  const title = noticeTitle.value.trim();
+  const msg = noticeMsg.value.trim();
+  const audience = noticeAudience.value;
+
+  if(!title || !msg){
+    alert("Please fill all fields");
+    return;
+  }
+
+  db.collection("Notices").add({
+    title: title,
+    message: msg,
+    audience: audience,
+    createdBy: "Admin",
+    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+  }).then(()=>{
+    noticeTitle.value = "";
+    noticeMsg.value = "";
+  });
+}
+
+// LOAD NOTICES
+
+db.collection("Notices")
+.orderBy("timestamp","desc")
+.onSnapshot(snapshot=>{
+  const list = document.getElementById("noticeList");
+  list.innerHTML = "";
+
+  if(snapshot.empty){
+    list.innerHTML = "No notices found";
+    return;
+  }
+
+  snapshot.forEach(doc=>{
+    const n = doc.data();
+    list.innerHTML += `
+      <div class="notice-item">
+        <strong>${n.title}</strong>
+        <p>${n.message}</p>
+        <small>Audience: ${n.audience}</small><br>
+        <button class="delete-btn" onclick="deleteNotice('${doc.id}')">Delete</button>
+      </div>`;
+  });
+});
+
+function deleteNotice(id){
+  if(confirm("Delete this notice?")){
+    db.collection("Notices").doc(id).delete();
+  }
+}
+</script>
+
+</body>
+</html>

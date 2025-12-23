@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Dashboard</title>
+<script>
+const isLoggedIn = localStorage.getItem("appLoggedIn");
+let role = localStorage.getItem("appRole");
+
+if (!role) {
+  localStorage.clear();
+  window.location.replace("../index.html");
+}
+
+role = role.toLowerCase();
+
+if (isLoggedIn !== "true" || role !== "admin") {
+  window.location.replace("../index.html");
+}
+</script>
+
+
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+<script src="../firebase-config.js"></script>
+
+<style>
+/* SAME UI STYLE OF STUDENT DASHBOARD */
+body {
+    margin: 0;
+    font-family: Poppins, sans-serif;
+    background: #f4f4f4;
+    overflow-x: hidden;
+    font-size: 16px;
+}
+
+/* Tab content adjusted so header text stays visible */
+.tab {
+    display: none;
+    overflow-y: auto;
+    padding-bottom: 140px;
+    padding-top: 100px;
+}
+
+/* TOP BAR FIXED */
+.top-bar {
+    background: #e59b15;
+    color: white;
+    padding: 20px;
+    border-bottom-left-radius: 25px;
+    border-bottom-right-radius: 25px;
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 1000;
+}
+#home .grid {
+    margin-top: 50px;
+}
+
+.top-bar h2 { font-size: 26px; font-weight: 600; margin-bottom: 5px; }
+.top-bar p { font-size: 18px; margin: 6px 0; }
+
+/* Feature Grid */
+.grid {
+    padding: 15px;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.card {
+    background: #f8f8f8;
+    text-align: center;
+    padding: 23px 10px;
+    border-radius: 15px;
+    width: 89%;
+    margin: auto;
+    box-shadow: 0px 4px 14px rgba(0,0,0,0.12);
+    cursor: pointer;
+}
+.card-icon { font-size: 30px; }
+.card-title { font-size: 18px; }
+
+/* Profile Cards */
+.profile-card {
+    background: #fff;
+    padding: 15px;
+    border-radius: 12px;
+    margin-bottom: 15px;
+    font-size: 20px;
+    box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+}
+
+/* Bottom Nav */
+.navbar {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    background: #ffdba4;
+    display: flex;
+    justify-content: space-around;
+    padding: 8px 0;
+    border-top: 2px solid #d6b182;
+    z-index: 999;
+}
+
+.nav-item { text-align: center; cursor: pointer; width: 25%; font-size: 22px; }
+.nav-item span { font-size: 24px; display: block; }
+.nav-active { color: #e59b15; font-weight: bold; }
+
+/* ⭐ MOBILE RESPONSIVE FIX ⭐ */
+@media (max-width: 600px){
+
+
+    body {
+        font-size: 14px;
+    }
+.tab {
+        padding-top: 68px !important;
+    }
+   
+    .top-bar {
+        padding: 12px;
+    }
+
+    .top-bar h2 {
+        font-size: 20px;
+    }
+#home .grid {
+    margin-top: 40px;
+}
+#info .info-card:first-child {
+    margin-top: 32px; }
+    .top-bar p {
+        font-size: 14px;
+    }
+
+    .grid {
+        gap: 9px;
+    }
+
+    .card {
+        width: 94%;
+        padding: 20px 7px;
+    }
+
+    .card-icon {
+        font-size: 24px;
+    }
+
+    .card-title {
+        font-size: 14px;
+    }
+
+    .profile-card {
+        font-size: 15px;
+        padding: 12px;
+    }
+
+    .nav-item {
+        font-size: 14px;
+    }
+
+    .nav-item span {
+        font-size: 18px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<!-- HOME TAB -->
+<div id="home" class="tab">
+    <div class="top-bar">
+        <h2 id="adminName"></h2>
+        <p>Administrator Panel</p>
+        <p id="adminYear"></p>
+    </div>
+
+    <div class="grid">
+
+        <!-- 1 Info Desk -->
+        <div class="card" onclick="goInfo()">
+            <div class="card-icon">ℹ️</div>
+            <div class="card-title">Info Desk</div>
+        </div>
+
+        <!-- 2 Calendar -->
+       <div class="card" onclick="openCalendar()">
+
+
+            <div class="card-icon">📅</div>
+            <div class="card-title">Calendar</div>
+        </div>
+
+        <!-- 3 Useful Links -->
+        <div class="card" onclick="openLinks()">
+            <div class="card-icon">🔗</div>
+            <div class="card-title">Useful Links</div>
+        </div>
+
+        <!-- 4 Circular -->
+        <div class="card" onclick="goNotice()">
+            <div class="card-icon">📄</div>
+            <div class="card-title">Notice</div>
+        </div>
+
+        <!-- 5 Fees -->
+        <div class="card" onclick="goFees()">
+            <div class="card-icon">💰</div>
+            <div class="card-title">Fees</div>
+        </div>
+
+        <!-- 6 Timetable -->
+        <div class="card" onclick="goTimetable()">
+            <div class="card-icon">🕒</div>
+            <div class="card-title">Timetable</div>
+        </div>
+
+        <!-- 7 Attendance -->
+        <div class="card" onclick="goAttendance()">
+            <div class="card-icon">📊</div>
+            <div class="card-title">Attendance</div>
+        </div>
+
+        <!-- 8 Result -->
+        <div class="card" onclick="goResult()">
+            <div class="card-icon">🎯</div>
+            <div class="card-title">Result</div>
+        </div>
+
+        <!-- 9 Query -->
+        <div class="card" onclick="goQuery()">
+            <div class="card-icon">❓</div>
+            <div class="card-title">Query</div>
+        </div>
+
+        <!-- 10 Poll -->
+        <div class="card" onclick="goPoll()">
+            <div class="card-icon">📋</div>
+            <div class="card-title">Poll</div>
+        </div>
+
+        <!-- 11 Add User -->
+        <div class="card" onclick="openAddUser()">
+            <div class="card-icon">➕</div>
+            <div class="card-title">Add User</div>
+        </div>
+
+        <!-- 12 View/Edit User -->
+        <div class="card" onclick="openViewUsers()">
+             <div class="card-icon">📋</div>
+            <div class="card-title">View & Edit Users</div>
+        </div>
+
+        <!-- 13 Promote Students -->
+        <div class="card" onclick="openPromote()">
+            <div class="card-icon">⬆️</div>
+            <div class="card-title">Promote Students</div>
+        </div>
+
+        <!-- 14 Add Notification -->
+        <div class="card" onclick="openNotify()">
+            <div class="card-icon">🔔</div>
+            <div class="card-title">Add Notification</div>
+        </div>
+
+    </div>
+</div>
+
+<!-- NOTIFICATION TAB -->
+<div id="notification" class="tab">
+    <div class="top-bar"><h2>🔔 Notifications</h2></div>
+    <div style="padding:15px;">
+        <div class="profile-card">📢 Holiday Tomorrow!</div>
+    </div>
+</div>
+
+<!-- PROFILE TAB -->
+<div id="profile" class="tab">
+    <div class="top-bar"><h2>Profile</h2></div>
+
+    <div style="padding:15px;">
+
+        <div class="profile-card">
+            <strong>Personal Info</strong><br><br>
+            📛 Name: <span id="pNameCard"></span><br><br>
+            👤 Gender: <span id="pGender"></span><br><br>
+            🎂 DOB: <span id="pDob"></span>
+        </div>
+
+        <div class="profile-card">
+            <strong>Contact Info</strong><br><br>
+            📞 Phone: <span id="pPhone"></span><br><br>
+            ✉ Email: <span id="pEmail"></span>
+        </div>
+
+    </div>
+</div>
+
+<!-- SETTINGS -->
+<div id="settings" class="tab">
+    <div class="top-bar"><h2>Settings</h2></div>
+    <div style="padding:20px;">
+        <button onclick="logout()" 
+        style="background:red;color:white;width:100%;padding:12px;border-radius:12px;border:none;">
+        Logout</button>
+    </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="navbar">
+    <div class="nav-item nav-active" onclick="switchTab('home',this)"><span>🏠</span>Home</div>
+    <div class="nav-item" onclick="switchTab('notification',this)"><span>🔔</span>Notification</div>
+    <div class="nav-item" onclick="switchTab('profile',this)"><span>👤</span>Profile</div>
+    <div class="nav-item" onclick="switchTab('settings',this)"><span>⚙️</span>Settings</div>
+</div>
+
+<script>
+// Load admin data
+let adminData = JSON.parse(localStorage.getItem("studentLoginData") || "{}");
+
+document.getElementById("adminName").innerText = "Hi, " + (adminData.name || "Admin");
+document.getElementById("adminYear").innerText = adminData.year || "";
+
+document.getElementById("pNameCard").innerText = adminData.name || "";
+document.getElementById("pGender").innerText = adminData.gender || "";
+document.getElementById("pDob").innerText = adminData.dob || "";
+document.getElementById("pPhone").innerText = adminData.phone || "";
+document.getElementById("pEmail").innerText = adminData.email || "";
+
+// Tab switch
+function switchTab(tab, btn){
+    document.querySelectorAll(".tab").forEach(t => t.style.display = "none");
+    document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("nav-active"));
+    document.getElementById(tab).style.display = "block";
+    btn.classList.add("nav-active");
+}
+switchTab('home', document.querySelector('.nav-item'));
+
+/* -------- ALL ONCLICK FUNCTIONS ---------- */
+function goInfo(){
+  window.location.href = "info-desk.html";
+}
+function openCalendar(){
+    window.location.href = "calendar.html";
+}
+
+function openLinks(){   
+  window.location.href = "usefullinks.html";}
+function goCircular(){ alert("Circular Coming Soon"); }
+function goFees(){ alert("Fees Panel Coming Soon"); }
+function goTimetable(){ alert("Timetable Coming Soon"); }
+function goAttendance(){ alert("Attendance Coming Soon"); }
+function goResult(){ alert("Result Panel Coming Soon"); }
+function goQuery(){ alert("Query Panel Coming Soon"); }
+function goPoll(){ alert("Poll Panel Coming Soon"); }
+function openAddUser(){
+        window.location.href = "add-user.html";
+}
+
+function openViewUsers(){
+    window.location.href ="view-users.html";
+}
+function openPromote(){ alert("Promote Students Coming Soon"); }
+function openNotify(){ alert("Add Notification Coming Soon"); }
+
+function logout() {
+
+    // 🔥 ANDROID SESSION CLEAR
+    if (window.Android) {
+        Android.logout();
+    }
+
+    // Firebase logout
+    firebase.auth().signOut().catch(()=>{});
+
+    // Web session clear
+    localStorage.clear();
+    sessionStorage.clear();
+
+    // HARD redirect (history clean)
+    window.location.href = "../index.html";
+}
+
+
+</script>
+
+</body>
+</html>

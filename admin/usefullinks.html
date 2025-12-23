@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Useful Links | Admin</title>
+
+<!-- 🔥 Firebase SDKs (ORDER IMPORTANT) -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+<script src="../firebase-config.js"></script>
+
+<style>
+body{
+    margin:0;
+    font-family:Poppins, sans-serif;
+    background:#f4f4f4;
+}
+
+/* TOP BAR */
+.top-bar{
+    background:#e59b15;
+    color:#fff;
+    padding:30px 16px;
+    border-bottom-left-radius:25px;
+    border-bottom-right-radius:25px;
+    position:fixed;
+    top:0;
+    width:100%;
+    z-index:1000;
+}
+.top-bar h2{margin:0;font-size:22px}
+
+/* CONTENT */
+.container{
+    margin-top:90px;
+    padding:15px;
+}
+
+/* ADD BUTTON */
+.add-btn{
+    width:100%;
+    background:#e59b15;
+    color:#fff;
+    border:none;
+    padding:12px;
+    border-radius:12px;
+    font-size:16px;
+    cursor:pointer;
+    margin-bottom:15px;
+}
+
+/* CARD */
+.card{
+    border-radius:14px;
+    padding:16px;
+    margin-bottom:12px;
+    position:relative;
+    box-shadow:0 3px 12px rgba(0,0,0,0.12);
+}
+.card:nth-child(4n+1){background:#ffe0e0;}
+.card:nth-child(4n+2){background:#d9f7f5;}
+.card:nth-child(4n+3){background:#fff0d6;}
+.card:nth-child(4n+4){background:#e0e8ff;}
+
+.card h4{
+    margin:0 0 8px;
+    font-size:18px;
+    font-weight:700;
+    margin-bottom: 14px;
+}
+.card a{
+    color:#0645ad;
+    word-break:break-all;
+}
+.card p{
+    margin:6px 0 0;
+    font-size:15px;
+}
+
+/* ACTIONS */
+.actions{
+    position:absolute;
+    right:12px;
+    top:50%;
+    transform:translateY(-50%);
+}
+.actions button{
+    border:none;
+    padding:10px 14px;     /* 🔥 size bada */
+    border-radius:10px;
+    cursor:pointer;
+    margin-left:8px;
+    font-size:18px;        /* 🔥 icon/text bada */
+    line-height:1;
+}
+.edit{background:#ffe1a8;}
+.delete{background:#ffb3b3;}
+/* 📱 MOBILE RESPONSIVE FIX */
+@media (max-width: 600px){
+
+    body{
+        font-size:14px;
+    }
+
+    /* TOP BAR */
+    .top-bar{
+        padding:28px 16px;
+        border-bottom-left-radius:25px;
+        border-bottom-right-radius:25px;
+    }
+
+    .top-bar h2{
+        font-size:22px;
+    }
+
+    /* CONTENT */
+    .container{
+        margin-top:80px;   /* top-bar ke hisaab se */
+        padding:12px;
+    }
+
+    /* CARD */
+    .card{
+        padding:14px;
+        border-radius:12px;
+    }
+
+    .card h4{
+        font-size:16px;
+        margin-bottom:10px;
+        padding-right:90px; /* buttons ke liye space */
+    }
+
+    .card a{
+        font-size:14px;
+        display:block;
+        word-break:break-all;
+        padding-right:90px;
+    }
+
+    .card p{
+        font-size:14px;
+        line-height:1.5;
+        padding-right:90px;
+    }
+
+    /* ACTION BUTTONS */
+    .actions{
+        right:8px;
+    }
+
+    .actions button{
+        padding:6px 8px;
+        font-size:14px;
+        margin-left:4px;
+        border-radius:6px;
+    }
+
+    /* ADD BUTTON */
+    .add-btn{
+        font-size:15px;
+        padding:12px;
+        border-radius:10px;
+        margin-top:10px;
+    }
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="top-bar">
+    <h2>Useful Links</h2>
+</div>
+
+<div class="container">
+     <div id="linkList">Loading...</div>
+    <button class="add-btn" onclick="addLink()">➕ Add New Link</button>
+  
+</div>
+
+<script>
+/* ================= LOAD LINKS ================= */
+function loadLinks(){
+    db.collection("UsefulLinks")
+      .orderBy("sequence","asc")
+      
+      .onSnapshot(snapshot=>{
+        let html="";
+        snapshot.forEach(doc=>{
+            const d = doc.data();
+            html += `
+            <div class="card">
+                <h4>${d.title}</h4>
+                <a href="${d.url}" target="_blank">${d.url}</a>
+                ${d.description ? `<p>${d.description}</p>` : ""}
+                <div class="actions">
+                    <button class="edit" onclick="editLink('${doc.id}')">✏️</button>
+                    <button class="delete" onclick="deleteLink('${doc.id}')">🗑</button>
+                </div>
+            </div>`;
+        });
+        document.getElementById("linkList").innerHTML =
+            html || "<p>No links added yet.</p>";
+      }, err=>{
+        console.error(err);
+        document.getElementById("linkList").innerHTML =
+            "<p style='color:red'>Index missing or permission error</p>";
+      });
+}
+loadLinks();
+
+/* ================= ADD LINK ================= */
+function addLink(){
+    const title = prompt("Enter Title");
+    if(!title) return;
+
+    const url = prompt("Enter URL (https://...)");
+    if(!url) return;
+
+    const description = prompt("Description (optional)") || "";
+    let sequence = prompt("Sequence / Position (1,2,3...)");
+    sequence = Number(sequence || 999);
+
+    db.collection("UsefulLinks").add({
+        title,
+        url,
+        description,
+        sequence,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    }).then(()=>{
+        alert("Link added successfully");
+    }).catch(err=>{
+        alert("Error: " + err.message);
+    });
+}
+
+/* ================= EDIT LINK ================= */
+async function editLink(id){
+    const docRef = db.collection("UsefulLinks").doc(id);
+    const snap = await docRef.get();
+    if(!snap.exists) return alert("Data not found");
+
+    const d = snap.data();
+
+    const title = prompt("Edit Title", d.title);
+    if(!title) return;
+
+    const url = prompt("Edit URL", d.url);
+    if(!url) return;
+
+    const description = prompt("Edit Description", d.description || "");
+    let sequence = prompt("Edit Sequence", d.sequence || 999);
+    sequence = Number(sequence || 999);
+
+    docRef.update({
+        title,
+        url,
+        description,
+        sequence
+    });
+}
+
+/* ================= DELETE LINK ================= */
+function deleteLink(id){
+    if(confirm("Delete this link?")){
+        db.collection("UsefulLinks").doc(id).delete();
+    }
+}
+</script>
+
+</body>
+</html>

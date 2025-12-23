@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Info Desk | Teacher</title>
+
+<!-- 🔥 Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+<script src="../firebase-config.js"></script>
+
+<style>
+body{
+    margin:0;
+    font-family:Poppins, sans-serif;
+    background:#f4f4f4;
+}
+
+/* TOP BAR */
+.top-bar{
+    background:#e59b15;
+    color:#fff;
+    padding:32px 16px;
+    border-bottom-left-radius:25px;
+    border-bottom-right-radius:25px;
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    z-index:1000;
+}
+.top-bar h2{
+    margin:0;
+    font-size:22px;
+}
+
+/* CONTENT */
+.container{
+    padding:15px;
+    margin-top:90px;   /* 🔥 same spacing */
+}
+
+/* CARD */
+.card{
+    border-radius:14px;
+    padding:16px;
+    margin-bottom:12px;
+    box-shadow:0 3px 12px rgba(0,0,0,0.12);
+}
+
+/* 🎨 COLORS */
+.card:nth-child(4n+1){ background:#ffe0e0; }
+.card:nth-child(4n+2){ background:#d9f7f5; }
+.card:nth-child(4n+3){ background:#fff0d6; }
+.card:nth-child(4n+4){ background:#e0e8ff; }
+
+.card h4{
+    margin:0 0 14px;
+    font-size:20px;
+    font-weight:700;
+    color:#000;
+}
+
+.card p{
+    margin:0;
+    font-size:18px;
+    color:#333;
+    line-height:1.6;
+}
+
+/* 📱 MOBILE */
+@media (max-width:600px){
+    .top-bar{
+        padding:22px 14px;
+        border-bottom-left-radius:20px;
+        border-bottom-right-radius:20px;
+    }
+    .top-bar h2{
+        font-size:18px;
+    }
+    .container{
+        padding:12px;
+        margin-top:80px;
+    }
+    .card{
+        padding:14px;
+        border-radius:12px;
+    }
+    .card h4{
+        font-size:17px;
+        margin-bottom:10px;
+    }
+    .card p{
+        font-size:15px;
+        line-height:1.5;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<!-- TOP BAR -->
+<div class="top-bar">
+    <h2>Info Desk</h2>
+</div>
+
+<!-- CONTENT -->
+<div class="container">
+    <div id="infoList"></div>
+</div>
+
+<script>
+// 🔥 LOAD INFO (READ ONLY)
+function loadInfo(){
+    db.collection("SchoolInfo")
+      .doc("useful")
+      .collection("items")
+      .orderBy("sequence","asc")
+      .onSnapshot(snapshot=>{
+        let html = "";
+        snapshot.forEach(doc=>{
+            let d = doc.data();
+            html += `
+                <div class="card">
+                    <h4>${d.title}</h4>
+                    <p>${d.value}</p>
+                </div>
+            `;
+        });
+        document.getElementById("infoList").innerHTML =
+            html || "<p>No info available.</p>";
+      });
+}
+loadInfo();
+</script>
+
+</body>
+</html>

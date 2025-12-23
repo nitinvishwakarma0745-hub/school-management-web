@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Info Desk | Admin</title>
+
+<!-- 🔥 Firebase SDKs (ORDER VERY IMPORTANT) -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+<script src="../firebase-config.js"></script>
+
+<style>
+body{
+    margin:0;
+    font-family:Poppins, sans-serif;
+    background:#f4f4f4;
+}
+
+/* TOP BAR */
+.top-bar{
+    background:#e59b15;
+    color:#fff;
+    padding:28px 16px;              /* height yahin se control */
+    border-bottom-left-radius:25px;
+    border-bottom-right-radius:25px;
+
+    position: fixed;                /* 🔥 FIXED */
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1000;
+}
+
+
+.top-bar h2{
+    margin:0;
+    font-size:22px;
+    margin-bottom:14px;   /* 🔥 text ke niche space */
+
+}
+
+/* CONTENT */
+.container{
+    padding:15px;
+    margin-top:95px;   /* 🔥 top-bar ki approx height */
+}
+
+
+/* ADD BUTTON */
+.add-btn{
+    background:#e59b15;
+    color:white;
+    width:100%;
+    padding:12px;
+    border:none;
+    border-radius:12px;
+    font-size:16px;
+    margin-bottom:15px;
+    cursor:pointer;
+}
+
+.card{
+    border-radius:14px;
+    padding:16px;
+    margin-bottom:12px;
+      position: relative;   /* 🔥 IMPORTANT */
+    box-shadow:0 3px 12px rgba(0,0,0,0.12);
+}
+
+/* 🎨 DIFFERENT COLORS */
+.card:nth-child(4n+1){ background:#ffe0e0; } /* light pink */
+.card:nth-child(4n+2){ background:#d9f7f5; } /* light cyan */
+.card:nth-child(4n+3){ background:#fff0d6; } /* light orange */
+.card:nth-child(4n+4){ background:#e0e8ff; } /* light blue */
+.card h4{
+    margin:0 0 8px;
+    font-size:20px;      /* 🔥 bada font */
+    font-weight:700;     /* 🔥 bold */
+    color:#000;
+        margin-bottom:14px;   /* 🔥 yahi gap badhaya */
+}
+
+.card p{
+    margin:0;
+    font-size:18px;
+    color:#333;
+        line-height:1.6;
+}
+
+/* ACTIONS */
+.actions{
+    position:absolute;
+    right:12px;
+    top:50%;
+    transform:translateY(-50%); /* 🔥 vertically center */
+}
+
+.actions button{
+    border:none;
+    padding:10px 14px;     /* 🔥 size bada */
+    border-radius:10px;
+    cursor:pointer;
+    margin-left:8px;
+    font-size:18px;        /* 🔥 icon/text bada */
+    line-height:1;
+}
+
+
+.edit{ background:#ffe1a8; }
+.delete{ background:#ffb3b3; }
+/* 📱 MOBILE RESPONSIVE */
+@media (max-width: 600px){
+
+    /* TOP BAR */
+    .top-bar{
+        padding:22px 14px;
+        border-bottom-left-radius:20px;
+        border-bottom-right-radius:20px;
+    }
+
+    .top-bar h2{
+        font-size:18px;
+        margin-bottom:10px;
+       
+    }
+
+    /* CONTENT SHIFT */
+    .container{
+        padding:12px;
+        margin-top:80px;   /* mobile me top-bar chhota */
+    }
+
+    /* CARD */
+    .card{
+        padding:14px;
+        border-radius:12px;
+    }
+
+    .card h4{
+        font-size:17px;     /* title thoda chhota */
+        margin-bottom:10px;
+    }
+
+    .card p{
+        font-size:15px;
+        line-height:1.5;
+        padding-right:80px; /* 🔥 buttons ke liye jagah */
+    }
+
+    /* ACTION BUTTONS */
+    .actions{
+        right:8px;
+    }
+
+    .actions button{
+        padding:6px 8px;
+        font-size:14px;
+        margin-left:4px;
+        border-radius:6px;
+    }
+
+    /* ADD BUTTON */
+    .add-btn{
+        font-size:15px;
+        padding:12px;
+        border-radius:10px;
+    }
+}
+
+</style>
+</head>
+
+<body>
+
+<!-- TOP -->
+<div class="top-bar">
+    <h2> Info Desk </h2>
+</div>
+
+<!-- CONTENT -->
+<div class="container">
+ <div id="infoList"></div>
+    <button class="add-btn" onclick="addInfo()">Add New Info</button>
+
+    
+
+</div>
+
+<script>
+
+// 🔥 LOAD ALL INFO (REALTIME)
+function loadInfo(){
+    db.collection("SchoolInfo")
+      .doc("useful")
+      .collection("items")
+  .orderBy("sequence","asc")
+
+
+
+      .onSnapshot(snapshot=>{
+        let html = "";
+        snapshot.forEach(doc=>{
+            let d = doc.data();
+            html += `
+                <div class="card">
+                    <h4>${d.title}</h4>
+                    <p>${d.value}</p>
+                    <div class="actions">
+<button class="edit"
+onclick="editInfo(
+  '${doc.id}',
+  '${d.title}',
+  '${d.value}',
+  '${d.sequence || 999}'
+)">✏️</button>
+
+                        <button class="delete" onclick="deleteInfo('${doc.id}')">🗑</button>
+                    </div>
+                </div>
+            `;
+        });
+        document.getElementById("infoList").innerHTML = html || "<p>No info added yet.</p>";
+      });
+}
+loadInfo();
+
+// ➕ ADD INFO
+function addInfo(){
+    let title = prompt("Enter Title");
+    if(!title) return;
+
+    let value = prompt("Enter Value");
+    if(!value) return;
+
+    let seq = prompt("Sequence / Position (1,2,3...)");
+    seq = Number(seq || 999);
+
+    db.collection("SchoolInfo")
+      .doc("useful")
+      .collection("items")
+      .add({
+        title: title,
+        value: value,
+        sequence: seq,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+}
+
+
+// ✏️ EDIT INFO
+function editInfo(id, oldTitle, oldValue, oldSeq){
+    let title = prompt("Edit Title", oldTitle);
+    if(!title) return;
+
+    let value = prompt("Edit Value", oldValue);
+    if(!value) return;
+
+    let seq = prompt("Edit Sequence", oldSeq);
+    seq = Number(seq || 999);
+
+    db.collection("SchoolInfo")
+      .doc("useful")
+      .collection("items")
+      .doc(id)
+      .update({
+        title,
+        value,
+        sequence: seq
+      });
+}
+
+// 🗑 DELETE INFO
+function deleteInfo(id){
+    if(confirm("Delete this info?")){
+        db.collection("SchoolInfo")
+          .doc("useful")
+          .collection("items")
+          .doc(id)
+          .delete();
+    }
+}
+</script>
+
+</body>
+</html>
