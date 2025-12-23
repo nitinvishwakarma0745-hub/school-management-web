@@ -132,6 +132,19 @@ body{
     .nav-item span{font-size:18px;}
     .profile-card{font-size:15px;}
 }
+@media (max-width: 768px) {
+
+    body {
+        padding-top: calc(5px + env(safe-area-inset-top));
+    }
+
+    .top-bar,
+    .header,
+    .top-container {
+        padding-top: calc(10px + env(safe-area-inset-top));
+    }
+
+}
 </style>
 
 <!-- Firebase -->
