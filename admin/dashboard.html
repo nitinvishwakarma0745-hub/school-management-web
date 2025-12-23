@@ -170,6 +170,22 @@ body {
         font-size: 18px;
     }
 }
+/* 🔥 MOBILE ONLY – EXTRA SAFE GAP */
+@media (max-width: 768px) {
+
+    body {
+        padding-top: calc(50px + env(safe-area-inset-top));
+    }
+
+    .top-bar,
+    .header,
+    .top-container {
+        padding-top: calc(60px + env(safe-area-inset-top));
+    }
+
+}
+
+
 </style>
 </head>
 
