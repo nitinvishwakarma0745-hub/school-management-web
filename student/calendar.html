@@ -19,10 +19,11 @@ body{
 }
 
 /* TOP BAR */
+/* TOP BAR */
 .top-bar{
     background:#e59b15;
     color:#fff;
-    padding:28px 16px;
+    padding:38px 16px 26px;   /* 🔥 TOP padding badhai (webview issue fix) */
     border-bottom-left-radius:25px;
     border-bottom-right-radius:25px;
     position:fixed;
@@ -30,32 +31,51 @@ body{
     width:100%;
     z-index:1000;
 }
+
+.top-bar-inner{
+    display:flex;
+    align-items:center;
+    gap:18px;                 /* 🔥 back & title gap */
+}
+
+/* BACK BUTTON */
+.back-btn{
+    font-size:26px;
+    font-weight:900;          /* 🔥 BOLD */
+    cursor:pointer;
+    line-height:1;
+}
+
+
+/* TITLE */
 .top-bar h2{
     margin:0;
     font-size:22px;
+    font-weight:600;
 }
 
 /* CONTENT */
 .container{
-    margin-top:110px;
+    margin-top:105px;         /* 🔥 mobile hide fix */
     padding:16px;
     text-align:center;
 }
 
-/* TAB SWITCH */
+
 .cal-switch{
     position: fixed;
-    top: 80px;
+    top: 90px;               /* 🔥 top-bar ke baad */
     left: 0;
     width: 100%;
     background: #f4f4f4;
     z-index: 999;
     display: flex;
     justify-content: center;
-    gap: 140px;
-    padding: 20px 0;
+    gap: 120px;
+    padding: 16px 0;
     font-size: 20px;
 }
+
 
 .cal-tab-btn{
     cursor:pointer;
@@ -123,20 +143,26 @@ td div{
 
 /* MOBILE */
 @media(max-width:600px){
-    .container{margin-top:95px;}
+    .container{margin-top:97px;}
     .cal-switch{gap:80px;font-size:18px;}
     td div{width:28px;height:28px;line-height:28px;font-size:14px;}
     .event-card h4{font-size:16px;}
     .event-card p{font-size:14px;}
 }
+
+
 </style>
 </head>
 
 <body>
 
 <div class="top-bar">
-    <h2>Calendar</h2>
+    <div class="top-bar-inner">
+        <span class="back-btn" onclick="goBack()">&#8592;</span>
+        <h2>Calendar</h2>
+    </div>
 </div>
+
 
 <div class="container">
 
@@ -173,6 +199,15 @@ td div{
     </div>
 
 </div>
+<script>
+function goBack(){
+    if (window.history.length > 1) {
+        window.history.back();
+    } else {
+        window.close(); // Android WebView fallback
+    }
+}
+</script>
 
 <script>
 /* ---------- CALENDAR ---------- */
