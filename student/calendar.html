@@ -44,6 +44,7 @@ body{
     font-weight:900;          /* 🔥 BOLD */
     cursor:pointer;
     line-height:1;
+    padding-top: 20px;
 }
 
 
@@ -52,11 +53,13 @@ body{
     margin:0;
     font-size:22px;
     font-weight:600;
+    padding-top: 20px;
+   
 }
 
 /* CONTENT */
 .container{
-    margin-top:105px;         /* 🔥 mobile hide fix */
+    margin-top:125px;         /* 🔥 mobile hide fix */
     padding:16px;
     text-align:center;
 }
@@ -64,7 +67,7 @@ body{
 
 .cal-switch{
     position: fixed;
-    top: 90px;               /* 🔥 top-bar ke baad */
+    top: 110px;               /* 🔥 top-bar ke baad */
     left: 0;
     width: 100%;
     background: #f4f4f4;
@@ -143,11 +146,8 @@ td div{
 
 /* MOBILE */
 @media(max-width:600px){
-     .top-bar{
-        padding-top: calc(45px + env(safe-area-inset-top));
-    }
-    .container{margin-top:105px;}
-   .cal-switch{gap:80px;font-size:18px; top: 95px;}
+    .container{margin-top:115px;}
+   .cal-switch{gap:80px;font-size:18px; top: 105px;}
     td div{width:28px;height:28px;line-height:28px;font-size:14px;}
     .event-card h4{font-size:16px;}
     .event-card p{font-size:14px;}
