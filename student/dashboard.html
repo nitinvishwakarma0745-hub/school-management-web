@@ -38,7 +38,20 @@ body {
     padding-bottom: 140px;
     padding-top: 100px;
 }
- 
+ .top-bar-inner{
+    display:flex;
+    align-items:center;   /* 🔥 vertical center */
+    gap:15px;             /* 🔥 back + title gap */
+}
+
+.back-btn{
+    font-size:26px;       /* same size */
+    font-weight:900;      /* 🔥 bold */
+    cursor:pointer;
+    line-height:1;
+   padding-top: 16px;
+}
+
 
 /* TOP BAR FIXED */
 .top-bar {
@@ -61,17 +74,6 @@ body {
 .top-bar p {
     font-size: 18px;
     margin: 6px  0;
-}
-
-/* ⭐ BACK BUTTON UPDATED */
-.back-btn {
-    background: none;
-    border: none;
-    font-size: 28px;  /* Bigger arrow */
-    font-weight: 400;
-    color: #ffffff;   /* Bright */
-    margin-right: 15px;
-    cursor: pointer;
 }
 
 #home .grid {
@@ -167,6 +169,11 @@ body {
     gap: 150px; /* Web/Laptop gap */
     margin-bottom: 20px;
 }
+@media (max-width: 600px) {
+    #myClass {
+        padding-top: 95px !important;
+    }
+}
 
 /* Mobile me gap chhota */
 @media (max-width: 600px) {
@@ -184,7 +191,10 @@ body {
 .tab {
         padding-top: 68px !important;
     }
-   
+       #myClass .top-bar h2{
+        padding-top: 30px;}
+            #myClass .back-btn{
+                padding-top: 40px;}
    
     .top-bar {
         padding: 12px;
@@ -363,11 +373,14 @@ body {
 <!-- ⭐ MY CLASS TAB ⭐ -->
 <div id="myClass" class="tab">
     <div class="top-bar">
-        <button class="back-btn" onclick="switchTab('home', document.querySelector('.nav-item'))">←</button>
+    <div class="top-bar-inner">
+        <span class="back-btn" onclick="switchTab('home', document.querySelector('.nav-item'))">←</span>
         <h2>My Class</h2>
     </div>
+</div>
 
-    <div style="padding:15px; margin-top: 30px" id="classList"></div>
+
+    <div style="padding:10px; margin-top: 4px" id="classList"></div>
 </div>
 
 <style>

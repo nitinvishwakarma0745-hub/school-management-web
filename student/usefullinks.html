@@ -30,11 +30,28 @@ body{
     width:100%;
     z-index:1000;
 }
-.top-bar h2{margin:0;font-size:22px}
+.top-bar-inner{
+    display:flex;
+    align-items:center;
+    gap:18px;                 /* 🔥 back & title gap */
+}
+
+/* BACK BUTTON */
+.back-btn{
+    font-size:26px;
+    font-weight:900;          /* 🔥 BOLD */
+    cursor:pointer;
+    line-height:1;
+    padding-top: 20px;
+}
+.top-bar h2{margin:0;
+    font-size:22px;
+    padding-top: 20px;
+}
 
 /* CONTENT */
 .container{
-    margin-top:90px;
+    margin-top:105px;
     padding:15px;
 }
 
@@ -69,7 +86,7 @@ body{
 
 /* MOBILE */
 @media (max-width:600px){
-    .container{margin-top:80px;padding:12px;}
+    .container{margin-top:105px;padding:12px;}
     .card{padding:14px;border-radius:12px;}
     .card h4{font-size:16px;}
     .card a,.card p{font-size:14px;}
@@ -78,14 +95,25 @@ body{
 </head>
 
 <body>
-
 <div class="top-bar">
-    <h2> Useful Links</h2>
+    <div class="top-bar-inner">
+        <span class="back-btn" onclick="goBack()">&#8592;</span>
+        <h2>Useful links</h2>
+    </div>
 </div>
 
 <div class="container">
     <div id="linkList">Loading...</div>
 </div>
+<script>
+function goBack(){
+    if (window.history.length > 1) {
+        window.history.back();
+    } else {
+        window.close(); // Android WebView fallback
+    }
+}
+</script>
 
 <script>
 /* ===== LOAD LINKS (READ ONLY) ===== */
