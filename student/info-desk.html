@@ -31,15 +31,31 @@ body{
     width:100%;
     z-index:1000;
 }
+.top-bar-inner{
+    display:flex;
+    align-items:center;
+    gap:18px;                 /* 🔥 back & title gap */
+}
+
+/* BACK BUTTON */
+.back-btn{
+    font-size:26px;
+    font-weight:900;          /* 🔥 BOLD */
+    cursor:pointer;
+    line-height:1;
+    padding-top: 20px;
+}
+
 .top-bar h2{
     margin:0;
     font-size:22px;
+    padding-top: 20px;
 }
 
 /* CONTENT */
 .container{
     padding:15px;
-    margin-top:90px;   /* 🔥 same spacing */
+    margin-top:110px;   /* 🔥 same spacing */
 }
 
 /* CARD */
@@ -78,11 +94,14 @@ body{
         border-bottom-right-radius:20px;
     }
     .top-bar h2{
-        font-size:18px;
+        font-size:22px;
+       margin-top: 20px;
     }
+    .back-btn{
+        margin-top: 20px;}
     .container{
         padding:12px;
-        margin-top:80px;
+        margin-top:110px;
     }
     .card{
         padding:14px;
@@ -97,31 +116,33 @@ body{
         line-height:1.5;
     }
 }
-/* ✅ MOBILE ONLY – INFO DESK TOP CONTAINER FIX */
-@media (max-width: 768px) {
-
-    /* 🔥 Info desk ka top header / first section */
-    body > :first-child {
-        padding-top: calc(40px + env(safe-area-inset-top)) !important;
-    }
-
-}
-
 
 </style>
 </head>
 
 <body>
 
-<!-- TOP BAR -->
 <div class="top-bar">
-    <h2>Info Desk</h2>
+    <div class="top-bar-inner">
+        <span class="back-btn" onclick="goBack()">&#8592;</span>
+        <h2>Info Desk</h2>
+    </div>
 </div>
+
 
 <!-- CONTENT -->
 <div class="container">
     <div id="infoList"></div>
 </div>
+<script>
+function goBack(){
+    if (window.history.length > 1) {
+        window.history.back();
+    } else {
+        window.close(); // Android WebView fallback
+    }
+}
+</script>
 
 <script>
 // 🔥 LOAD INFO (READ ONLY)
